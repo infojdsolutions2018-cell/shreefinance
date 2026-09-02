@@ -12,9 +12,24 @@ interface KnowledgeTopic {
 const PHONE_NUMBER = "+91 88304 34945";
 const PHONE_RAW = "8830434945";
 const EMAIL = "shreefinancec@gmail.com";
+const OFFICE_ADDRESS = "Office No. D/201, Siddhivinayak Angan Society, Behind Shree Ji Pure Veg, Near Navale Bridge, Narhe, Pune, Maharashtra - 411041";
+const MAPS_LINK = "https://maps.google.com/?q=Office+No.+D/201,+Siddhivinayak+Angan+Society,+Behind+Shree+Ji+Pure+Veg,+Near+Navale+Bridge,+Narhe,+Pune+-+411041";
 
 const KNOWLEDGE_BASE: KnowledgeTopic[] = [
-    // 1. Direct Contact / Phone Number / Speak to person / Agent / Advisor
+    // 1. Office Location / Address / Branch / Where are you located
+    {
+        category: "address_location",
+        keywords: [
+            "address", "location", "office", "branch", "where are you", "where is office",
+            "where located", "city", "pune", "narhe", "navale bridge", "visit", "head office",
+            "office address", "google map", "map", "directions", "locate", "place"
+        ],
+        reply: `📍 **Shree Finance Official Office & Location**:\n\n🏢 **Head Office Address:**\n**Office No. D/201, Siddhivinayak Angan Society,**\nBehind Shree Ji Pure Veg, Near Navale Bridge,\nNarhe, Pune, Maharashtra – 411041\n\n🗺️ **Google Maps Link:** [Click to open Google Maps Directions](${MAPS_LINK})\n\n📞 **Phone:** [**+91 88304 34945**](tel:+918830434945)\n✉️ **Email:** [${EMAIL}](mailto:${EMAIL})\n🕒 **Office Timings:** Monday – Saturday: 9:30 AM – 7:30 PM\n\n*We also provide 100% paperless digital loan sanctions and doorstep document assistance across India!*`,
+        quickReplies: ["Get Directions", "Call 88304 34945", "Apply for Loan", "Home Loan Rates"],
+        triggerLeadModal: false
+    },
+
+    // 2. Direct Contact / Phone Number / Speak to person / Agent / Advisor
     {
         category: "contact_person",
         keywords: [
@@ -23,20 +38,20 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
             "executive", "customer care", "helpline", "support number", "whatsapp", "call me",
             "give me number", "their number", "his number", "her number", "direct call", "talk"
         ],
-        reply: `📞 **Direct Contact Information - Shree Finance**\n\n• **Direct Phone / WhatsApp:** [**+91 88304 34945**](tel:+918830434945)\n• **Official Email:** [${EMAIL}](mailto:${EMAIL})\n• **Consultation Hours:** Mon – Sat, 9:00 AM – 8:00 PM\n\nYou can call our Senior Loan Officer directly at **88304 34945** or click below to request an instant callback with 100% free consultation!`,
-        quickReplies: ["Call 88304 34945", "Request Free Callback", "Apply for Loan", "Home Loan Rates"],
+        reply: `📞 **Direct Contact Information - Shree Finance**\n\n• **Direct Phone / WhatsApp:** [**+91 88304 34945**](tel:+918830434945)\n• **Official Email:** [${EMAIL}](mailto:${EMAIL})\n• **Office Address:** ${OFFICE_ADDRESS}\n• **Consultation Hours:** Mon – Sat, 9:00 AM – 8:00 PM\n\nYou can call our Senior Loan Officer directly at **88304 34945** or click below to request an instant callback with 100% free consultation!`,
+        quickReplies: ["Call 88304 34945", "Office Address", "Request Free Callback", "Home Loan Rates"],
         triggerLeadModal: false
     },
 
-    // 2. Greetings
+    // 3. Greetings
     {
         category: "greetings",
         keywords: ["hi", "hello", "hey", "namaste", "good morning", "good evening", "good afternoon", "start", "halo", "hii"],
-        reply: `Hello! 👋 Welcome to **Shree Finance AI Financial Advisor**.\n\nI can help you with:\n• **Home Loans** (from 8.35%)\n• **Personal Loans** (from 10.49%)\n• **Business & MSME Loans** (from 11.25%)\n• **Car & Vehicle Loans** (from 8.75%)\n• **Loan Against Property (LAP)** & **Education Loans**\n• Multi-bank rate comparison, EMI calculations, and direct contact (**88304 34945**).\n\nWhat loan or financial service are you looking for today?`,
-        quickReplies: ["Home Loan (8.35%)", "Personal Loan (10.49%)", "Business Loan (11.25%)", "Car Loan (8.75%)", "Call Advisor"]
+        reply: `Hello! 👋 Welcome to **Shree Finance AI Financial Advisor**.\n\nI can help you with:\n• **Home Loans** (from 8.35%)\n• **Personal Loans** (from 10.49%)\n• **Business & MSME Loans** (from 11.25%)\n• **Car & Vehicle Loans** (from 8.75%)\n• **Office Location / Address** in Narhe, Pune\n• Multi-bank comparison, EMI calculations, and direct contact (**88304 34945**).\n\nWhat loan or financial service are you looking for today?`,
+        quickReplies: ["Home Loan (8.35%)", "Personal Loan (10.49%)", "Office Address", "Car Loan (8.75%)", "Call Advisor"]
     },
 
-    // 3. Home Loans (Interest, Amount, Banks, Tenure)
+    // 4. Home Loans (Interest, Amount, Banks, Tenure)
     {
         category: "home_loan",
         keywords: [
@@ -44,11 +59,11 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
             "flat purchase", "home construction", "villa loan", "home renovation", "home loan rate",
             "home loan amount", "home loan bank"
         ],
-        reply: `🏡 **Shree Finance Home Loans (2026 Overview)**:\n\n• **Interest Rates:** **8.35% – 9.15% p.a.** (special repo-linked concessions available)\n• **Loan Amount:** Up to **₹10 Crores** (Up to 90% of property valuation)\n• **Tenure:** Flexible repayment from **1 to 30 Years**\n• **Partner Banks:** SBI, HDFC Bank, ICICI Bank, YES Bank, Axis Bank, Bank of Baroda, PNB, Kotak Mahindra\n• **Key Benefits:** PMAY interest subsidy support, zero prepayment penalty for floating rates, doorstep assistance.\n\n📞 Need instant loan sanction? Call our specialist at **88304 34945**.`,
-        quickReplies: ["Home Loan Eligibility", "Documents for Home Loan", "Apply for Home Loan", "Call Advisor"]
+        reply: `🏡 **Shree Finance Home Loans (2026 Overview)**:\n\n• **Interest Rates:** **8.35% – 9.15% p.a.** (special repo-linked concessions available)\n• **Loan Amount:** Up to **₹10 Crores** (Up to 90% of property valuation)\n• **Tenure:** Flexible repayment from **1 to 30 Years**\n• **Partner Banks:** SBI, HDFC Bank, ICICI Bank, YES Bank, Axis Bank, Bank of Baroda, PNB, Kotak Mahindra\n• **Key Benefits:** PMAY interest subsidy support, zero prepayment penalty for floating rates, doorstep assistance.\n\n📞 Need instant loan sanction? Call our specialist at **88304 34945** or visit our office at Narhe, Pune.`,
+        quickReplies: ["Home Loan Eligibility", "Documents for Home Loan", "Apply for Home Loan", "Call Advisor (88304 34945)"]
     },
 
-    // 4. Car Loans / Auto Loans (Rates, Amount, Tenure, Banks)
+    // 5. Car Loans / Auto Loans (Rates, Amount, Tenure, Banks)
     {
         category: "car_loan",
         keywords: [
@@ -59,7 +74,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Car Loan Eligibility", "Apply for Car Loan", "Compare Bank Rates", "Call 88304 34945"]
     },
 
-    // 5. Personal Loans (Interest, Instant Cash, Tenure)
+    // 6. Personal Loans (Interest, Instant Cash, Tenure)
     {
         category: "personal_loan",
         keywords: [
@@ -70,7 +85,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Personal Loan Eligibility", "Required Documents", "Apply for Personal Loan", "Call Advisor"]
     },
 
-    // 6. Business Loans / MSME / Working Capital
+    // 7. Business Loans / MSME / Working Capital
     {
         category: "business_loan",
         keywords: [
@@ -81,7 +96,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Business Loan Docs", "Mudra Scheme", "Apply for Business Loan", "Call Advisor"]
     },
 
-    // 7. Loan Against Property (LAP) / Mortgage Loan
+    // 8. Loan Against Property (LAP) / Mortgage Loan
     {
         category: "lap",
         keywords: [
@@ -92,7 +107,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["LAP Eligibility", "Apply for LAP", "Documents for LAP", "Call 88304 34945"]
     },
 
-    // 8. Education Loans
+    // 9. Education Loans
     {
         category: "education_loan",
         keywords: [
@@ -103,7 +118,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Education Loan Docs", "Apply for Study Loan", "Call 88304 34945"]
     },
 
-    // 9. Government Schemes & Subsidies (PMAY, Mudra, PMEGP)
+    // 10. Government Schemes & Subsidies (PMAY, Mudra, PMEGP)
     {
         category: "govt_schemes",
         keywords: [
@@ -114,7 +129,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Apply for PMAY", "Apply for Mudra", "Talk to Advisor (88304 34945)"]
     },
 
-    // 10. Balance Transfer & Top-Up
+    // 11. Balance Transfer & Top-Up
     {
         category: "balance_transfer",
         keywords: [
@@ -125,7 +140,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Calculate BT Savings", "Apply Balance Transfer", "Call 88304 34945"]
     },
 
-    // 11. Partner Program / DSA Channel Partner (Commission, Earnings)
+    // 12. Partner Program / DSA Channel Partner (Commission, Earnings)
     {
         category: "partner_program",
         keywords: [
@@ -136,7 +151,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Register as Partner", "Partner Login", "Commission Slabs", "Call 88304 34945"]
     },
 
-    // 12. Documents Required Checklist
+    // 13. Documents Required Checklist
     {
         category: "documents",
         keywords: [
@@ -147,7 +162,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Check Eligibility", "Apply for Loan", "Call Advisor (88304 34945)"]
     },
 
-    // 13. Eligibility & CIBIL / Credit Score
+    // 14. Eligibility & CIBIL / Credit Score
     {
         category: "eligibility",
         keywords: [
@@ -158,7 +173,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Calculate EMI", "Home Loan Rates", "Personal Loan Rates", "Call 88304 34945"]
     },
 
-    // 14. Partner Banks & Institutions
+    // 15. Partner Banks & Institutions
     {
         category: "banks",
         keywords: [
@@ -169,7 +184,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Compare Bank Rates", "Apply Online", "Call 88304 34945"]
     },
 
-    // 15. All Loan Interest Rates Comparison
+    // 16. All Loan Interest Rates Comparison
     {
         category: "rates_general",
         keywords: [
@@ -180,7 +195,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Home Loan (8.35%)", "Personal Loan (10.49%)", "Car Loan (8.75%)", "Call Advisor"]
     },
 
-    // 16. Track Loan Status
+    // 17. Track Loan Status
     {
         category: "track_status",
         keywords: ["track", "status", "application status", "my loan status", "reference id", "where is my loan", "check status"],
@@ -188,7 +203,7 @@ const KNOWLEDGE_BASE: KnowledgeTopic[] = [
         quickReplies: ["Go to Track Status", "Apply New Loan", "Call Support (88304 34945)"]
     },
 
-    // 17. Appreciation / Gratitude
+    // 18. Appreciation / Gratitude
     {
         category: "thanks",
         keywords: ["thank", "thanks", "thank you", "great", "awesome", "good", "nice", "ok", "okay", "understood", "clear"],
@@ -237,7 +252,7 @@ function parseLoanAmountAndType(message: string): { amountText: string; estimate
         const carN = 84;
         const carEmi = Math.round((amount * carMonthlyR * Math.pow(1 + carMonthlyR, carN)) / (Math.pow(1 + carMonthlyR, carN) - 1));
 
-        const emiText = `💰 **Quick Estimated EMI Breakdown for ${label}**:\n\n• 🏡 **Home Loan (8.35%, 20 Yrs):** Approx **₹${homeEmi.toLocaleString("en-IN")} / month**\n• 🚗 **Car Loan (8.75%, 7 Yrs):** Approx **₹${carEmi.toLocaleString("en-IN")} / month**\n• 💳 **Personal Loan (10.49%, 5 Yrs):** Approx **₹${plEmi.toLocaleString("en-IN")} / month**\n\n*Would you like an exact customized quote or balance transfer analysis? Call our loan desk directly at **88304 34945**!*`;
+        const emiText = `💰 **Quick Estimated EMI Breakdown for ${label}**:\n\n• 🏡 **Home Loan (8.35%, 20 Yrs):** Approx **₹${homeEmi.toLocaleString("en-IN")} / month**\n• 🚗 **Car Loan (8.75%, 7 Yrs):** Approx **₹${carEmi.toLocaleString("en-IN")} / month**\n• 💳 **Personal Loan (10.49%, 5 Yrs):** Approx **₹${plEmi.toLocaleString("en-IN")} / month**\n\n*Would you like an exact customized quote or balance transfer analysis? Call our loan desk directly at **88304 34945** or visit our Pune office!*`;
         
         return { amountText: label, estimatedEmiText: emiText };
     }
@@ -252,14 +267,33 @@ export async function POST(req: Request) {
 
         if (!userMessage) {
             return NextResponse.json({
-                reply: "Please type your question about any loan, interest rates, eligibility, or partner program!",
-                quickReplies: ["Home Loan", "Personal Loan", "Business Loan", "Car Loan", "Call Advisor (88304 34945)"]
+                reply: "Please type your question about any loan, interest rates, eligibility, office location, or partner program!",
+                quickReplies: ["Home Loan", "Personal Loan", "Office Location", "Car Loan", "Call Advisor (88304 34945)"]
             });
         }
 
         const lowerMsg = userMessage.toLowerCase();
 
-        // 1. Direct phone / contact inquiry detection
+        // 1. Direct Location / Address detection (Highest Priority for location queries)
+        const addressTriggers = [
+            "address", "location", "locate", "where are you", "where is your office", "where is office",
+            "office address", "branch", "where located", "visit office", "google map", "directions",
+            "pune office", "narhe", "navale", "office place"
+        ];
+        const isAddressQuery = addressTriggers.some(trigger => lowerMsg.includes(trigger));
+
+        if (isAddressQuery) {
+            const addressTopic = KNOWLEDGE_BASE.find(k => k.category === "address_location");
+            if (addressTopic) {
+                return NextResponse.json({
+                    reply: addressTopic.reply,
+                    quickReplies: addressTopic.quickReplies,
+                    triggerLeadModal: false
+                });
+            }
+        }
+
+        // 2. Direct phone / contact inquiry detection
         const contactTriggers = [
             "phone", "number", "contact", "mobile", "call", "talk", "person", "speak",
             "advisor", "agent", "officer", "manager", "human", "executive", "whatsapp",
@@ -278,7 +312,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // 2. Specific Loan Amount / EMI calculation request
+        // 3. Specific Loan Amount / EMI calculation request
         const calculationResult = parseLoanAmountAndType(userMessage);
         if (calculationResult && (lowerMsg.includes("emi") || lowerMsg.includes("calculate") || lowerMsg.includes("amount") || lowerMsg.includes("month") || lowerMsg.includes("lakh") || lowerMsg.includes("crore") || lowerMsg.includes("cr"))) {
             return NextResponse.json({
@@ -287,7 +321,7 @@ export async function POST(req: Request) {
             });
         }
 
-        // 3. Score-based matching against comprehensive knowledge base
+        // 4. Score-based matching against comprehensive knowledge base
         let bestMatch: KnowledgeTopic | null = null;
         let maxMatchScore = 0;
 
@@ -312,16 +346,16 @@ export async function POST(req: Request) {
             });
         }
 
-        // 4. Fallback: Intelligent comprehensive response with direct contact details
-        const fallbackReply = `I understand you have a question regarding "${userMessage}".\n\nAt **Shree Finance**, we provide transparent, multi-bank financing solutions across India:\n• **Home Loans** from **8.35% p.a.** (SBI, HDFC, ICICI, YES Bank)\n• **Car Loans** from **8.75% p.a.** (up to 100% on-road funding)\n• **Personal Loans** from **10.49% p.a.** (instant 24-48h disbursal)\n• **Business / MSME Loans** from **11.25% p.a.** (working capital & machinery finance)\n• **Loan Against Property (LAP)** from **9.00% p.a.**\n\n📞 **Talk Directly with Our Loan Advisor:**\nCall or WhatsApp: [**+91 88304 34945**](tel:+918830434945)\nOfficial Email: [${EMAIL}](mailto:${EMAIL})\n\nHow would you like to proceed?`;
+        // 5. Fallback: Intelligent comprehensive response with direct contact & location details
+        const fallbackReply = `I understand you have a question regarding "${userMessage}".\n\nAt **Shree Finance**, we provide transparent, multi-bank financing solutions across India:\n• **Home Loans** from **8.35% p.a.** (SBI, HDFC, ICICI, YES Bank)\n• **Car Loans** from **8.75% p.a.** (up to 100% on-road funding)\n• **Personal Loans** from **10.49% p.a.** (instant 24-48h disbursal)\n• **Business / MSME Loans** from **11.25% p.a.** (working capital & machinery finance)\n• **Loan Against Property (LAP)** from **9.00% p.a.**\n\n📍 **Office Location:** ${OFFICE_ADDRESS}\n📞 **Phone / WhatsApp:** [**+91 88304 34945**](tel:+918830434945)\n✉️ **Email:** [${EMAIL}](mailto:${EMAIL})\n\nHow would you like to proceed?`;
 
         return NextResponse.json({
             reply: fallbackReply,
             quickReplies: [
                 "Call Advisor (88304 34945)",
+                "Office Location",
                 "Home Loan Rates",
                 "Personal Loan Details",
-                "Business Loan",
                 "Apply for Loan"
             ]
         });
@@ -330,8 +364,8 @@ export async function POST(req: Request) {
         console.error("AI Chat API Error:", error);
         return NextResponse.json(
             {
-                reply: `Sorry, I encountered an issue processing your request. Please call our senior advisor directly at **+91 88304 34945** or email **${EMAIL}** for immediate assistance!`,
-                quickReplies: ["Call 88304 34945", "Home Loan", "Personal Loan", "Apply Now"]
+                reply: `Sorry, I encountered an issue processing your request. Please call our senior advisor directly at **+91 88304 34945** or visit our office at **${OFFICE_ADDRESS}**!`,
+                quickReplies: ["Call 88304 34945", "Office Location", "Home Loan", "Apply Now"]
             },
             { status: 500 }
         );
