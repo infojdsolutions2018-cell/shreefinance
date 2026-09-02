@@ -28,6 +28,7 @@ interface PageProps {
 
 const DEFAULT_FALLBACKS: Record<string, IBlog> = {
     "how-to-get-lowest-home-loan-interest-rate": {
+        _id: "default-1",
         title: "How to Get the Lowest Home Loan Interest Rate in 2026",
         slug: "how-to-get-lowest-home-loan-interest-rate",
         excerpt: "Master the insider tactics used by top financial advisors to negotiate 8.35% p.a. home loan rates and save up to ₹8 Lakhs in interest across 40+ banks.",
@@ -53,6 +54,7 @@ If your existing loan interest rate is above 9.25%, switching to a new lender of
         updatedAt: new Date("2026-03-01T10:00:00.000Z")
     } as unknown as IBlog,
     "personal-loan-vs-loan-against-property": {
+        _id: "default-2",
         title: "Personal Loan vs. Loan Against Property: Which Capital Option is Right for You?",
         slug: "personal-loan-vs-loan-against-property",
         excerpt: "Compare interest rates, tenure flexibility, and disbursal speeds to choose the most cost-effective funding source for your business or personal needs.",
@@ -83,6 +85,7 @@ If your existing loan interest rate is above 9.25%, switching to a new lender of
         updatedAt: new Date("2026-02-24T08:30:00.000Z")
     } as unknown as IBlog,
     "boost-cibil-score-above-750": {
+        _id: "default-3",
         title: "5 Proven Strategies to Boost Your CIBIL Score Above 750 in 60 Days",
         slug: "boost-cibil-score-above-750",
         excerpt: "Simple, actionable credit repair habits that eliminate score drag, fix reporting errors, and open instant pre-approved loans from top NBFCs.",
@@ -105,6 +108,7 @@ If your existing loan interest rate is above 9.25%, switching to a new lender of
         updatedAt: new Date("2026-02-18T14:15:00.000Z")
     } as unknown as IBlog,
     "sme-business-loan-eligibility-guide": {
+        _id: "default-4",
         title: "Unsecured Business Loans for SMEs: Complete Eligibility & Document Checklist",
         slug: "sme-business-loan-eligibility-guide",
         excerpt: "Everything small and medium business owners in Maharashtra need to know to secure up to ₹75 Lakhs collateral-free business loans in 48 hours.",
@@ -310,7 +314,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
                         <div className="grid sm:grid-cols-3 gap-6">
                             {recentBlogs.map((item) => (
-                                <Link key={String(item._id)} href={`/blogs/${item.slug}`} className="block group">
+                                <Link key={String(item._id || item.slug)} href={`/blogs/${item.slug}`} className="block group">
                                     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-sky-500/40 transition-all space-y-3 h-full flex flex-col justify-between">
                                         <div className="space-y-2">
                                             <span className="text-[10px] font-black uppercase text-[#0284c7]">
