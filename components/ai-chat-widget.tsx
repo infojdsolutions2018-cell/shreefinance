@@ -18,18 +18,21 @@ export function AIChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [messages, setMessages] = useState<Message[]>([
         {
             id: "1",
             sender: "bot",
-            text: "Hello! 👋 I am your Shree Finance AI Advisor (2026). How can I assist your financial journey today?",
+            text: "Hello! 👋 Welcome to Shree Finance AI Advisor. Ask me anything about Home Loans, Personal Loans, Business Loans, interest rates, eligibility, documents, or becoming a partner!",
             quickReplies: [
-                "Home Loan Interest Rates",
-                "Calculate Loan Eligibility",
-                "Balance Transfer Savings",
-                "Apply for Instant Loan"
+                "Home Loan Rates",
+                "Personal Loan Details",
+                "Business Loan",
+                "Check Eligibility",
+                "Documents Required",
+                "Partner Program"
             ]
         }
     ]);
@@ -40,41 +43,53 @@ export function AIChatWidget() {
 
     useEffect(() => {
         if (isOpen) scrollToBottom();
-    }, [messages, isOpen]);
+    }, [messages, isOpen, isLoading]);
 
-    const handleSend = (textToSend?: string) => {
+    const handleSend = async (textToSend?: string) => {
         const text = textToSend || input.trim();
-        if (!text) return;
+        if (!text || isLoading) return;
 
         const userMsg: Message = { id: Date.now().toString(), sender: "user", text };
         setMessages(prev => [...prev, userMsg]);
         if (!textToSend) setInput("");
+        setIsLoading(true);
 
-        // Simulated AI Bot response logic
-        setTimeout(() => {
-            let botReply = "";
-            let quickReplies: string[] = [];
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
 
-            const query = text.toLowerCase();
-            if (query.includes("home loan") || query.includes("rate")) {
-                botReply = "🏡 Our Home Loan interest rates start at just 8.35% p.a. with funding up to 90% of property value and flexible tenure up to 30 years. We also partner with YES Bank, SBI, HDFC, and ICICI for competitive multi-bank quotes!";
-                quickReplies = ["Check Eligibility", "Balance Transfer Calculator", "Speak to Advisor"];
-            } else if (query.includes("eligibility") || query.includes("salary") || query.includes("borrow")) {
-                botReply = "📊 On a net monthly salary of ₹75,000 with minimal existing EMIs, you can typically qualify for up to ₹45 - ₹55 Lakhs in Home Loan funding. Would you like a detailed multi-bank breakdown?";
-                quickReplies = ["Get Multi-Bank Quotes", "PMAY Tax Subsidy", "Apply Now"];
-            } else if (query.includes("balance transfer") || query.includes("transfer")) {
-                botReply = "🔄 Switching your existing home loan to a lower interest rate (e.g., from 9.8% to 8.35%) can save you up to ₹5 - ₹8 Lakhs over your remaining tenure. Plus zero processing fee offers!";
-                quickReplies = ["Open Savings Calculator", "Transfer My Loan"];
-            } else if (query.includes("apply") || query.includes("advisor") || query.includes("call")) {
-                botReply = "⚡ Great choice! Click below to request an instant callback or complete your 100% paperless application in 3 minutes.";
+            const data = await res.json();
+
+            if (data.triggerLeadModal) {
                 setIsLeadModalOpen(true);
-            } else {
-                botReply = "I can help you compare interest rates, calculate EMIs, check CIBIL eligibility, or submit a paperless loan application. How can I guide you?";
-                quickReplies = ["Home Loan Rates", "Personal Loan Rates", "Track Loan Status"];
             }
 
-            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), sender: "bot", text: botReply, quickReplies }]);
-        }, 600);
+            setMessages(prev => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    sender: "bot",
+                    text: data.reply || "I am here to assist you with all loan queries. How can I help further?",
+                    quickReplies: data.quickReplies || ["Check Eligibility", "Apply Now", "Speak to Advisor"]
+                }
+            ]);
+        } catch (error) {
+            console.error("Chat error:", error);
+            setMessages(prev => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    sender: "bot",
+                    text: "We offer Home Loans (from 8.35%), Personal Loans (from 10.49%), and Business Loans with instant pre-approval! You can apply directly or connect with our loan expert.",
+                    quickReplies: ["Apply for Loan", "Check Rates", "Request Callback"]
+                }
+            ]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -138,7 +153,7 @@ export function AIChatWidget() {
                             <div className="flex-1 p-4 overflow-y-auto space-y-4">
                                 {messages.map((m) => (
                                     <div key={m.id} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed font-medium ${
+                                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed font-medium whitespace-pre-line ${
                                             m.sender === 'user'
                                                 ? 'bg-primary text-white rounded-br-none shadow-md'
                                                 : 'bg-slate-800/90 text-slate-100 border border-white/10 rounded-bl-none shadow-sm'
@@ -153,7 +168,7 @@ export function AIChatWidget() {
                                                     <button
                                                         key={qr}
                                                         onClick={() => handleSend(qr)}
-                                                        className="text-[10px] font-black uppercase tracking-wider bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-xl transition-all hover:scale-105 active:scale-95"
+                                                        className="text-[10px] font-black uppercase tracking-wider bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
                                                     >
                                                         {qr}
                                                     </button>
@@ -162,6 +177,15 @@ export function AIChatWidget() {
                                         )}
                                     </div>
                                 ))}
+                                {isLoading && (
+                                    <div className="flex items-start">
+                                        <div className="bg-slate-800/90 border border-white/10 p-3 rounded-2xl rounded-bl-none flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-bounce [animation-delay:-0.3s]" />
+                                            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-bounce [animation-delay:-0.15s]" />
+                                            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-bounce" />
+                                        </div>
+                                    </div>
+                                )}
                                 <div ref={messagesEndRef} />
                             </div>
 
