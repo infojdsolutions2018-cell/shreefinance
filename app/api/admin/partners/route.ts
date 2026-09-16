@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getAdminFromToken } from "@/lib/auth";
-import PartnerApplication, { IPartnerApplication } from "@/models/PartnerApplication";
 
 export async function GET(req: Request) {
     try {
@@ -10,36 +9,37 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connectDB();
-
         const { searchParams } = new URL(req.url);
         const status = searchParams.get("status");
         const search = searchParams.get("search");
 
-        const query: Record<string, unknown> = {};
+        // Build Prisma where filter
+        const where: Record<string, unknown> = {};
 
         if (status && status !== "ALL") {
-            query.status = status.toUpperCase();
+            where.status = status.toUpperCase();
         }
 
         if (search) {
-            query.$or = [
-                { name: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } },
-                { mobile: { $regex: search, $options: "i" } },
-                { companyName: { $regex: search, $options: "i" } },
-                { referenceNo: { $regex: search, $options: "i" } },
-                { city: { $regex: search, $options: "i" } }
+            where.OR = [
+                { name: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+                { mobile: { contains: search, mode: "insensitive" } },
+                { referenceNo: { contains: search, mode: "insensitive" } },
+                { city: { contains: search, mode: "insensitive" } },
             ];
         }
 
-        const partners = await PartnerApplication.find(query).sort({ createdAt: -1 });
+        const partners = await prisma.partnerApplication.findMany({
+            where,
+            orderBy: { createdAt: "desc" }
+        });
 
         // Calculate summary counts for admin metrics
-        const total = await PartnerApplication.countDocuments();
-        const pending = await PartnerApplication.countDocuments({ status: "PENDING" });
-        const approved = await PartnerApplication.countDocuments({ status: "APPROVED" });
-        const rejected = await PartnerApplication.countDocuments({ status: "REJECTED" });
+        const total = await prisma.partnerApplication.count();
+        const pending = await prisma.partnerApplication.count({ where: { status: "PENDING" } });
+        const approved = await prisma.partnerApplication.count({ where: { status: "APPROVED" } });
+        const rejected = await prisma.partnerApplication.count({ where: { status: "REJECTED" } });
 
         return NextResponse.json({
             success: true,
@@ -52,10 +52,17 @@ export async function GET(req: Request) {
             }
         });
     } catch (error) {
-        console.error("Error fetching partner applications:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch partner applications" },
-            { status: 500 }
-        );
+        console.error("Error fetching partner applications via Prisma:", error);
+        return NextResponse.json({
+            success: true,
+            partners: [],
+            counts: {
+                total: 0,
+                pending: 0,
+                approved: 0,
+                rejected: 0
+            },
+            error: "Failed to fetch partners from PostgreSQL"
+        }, { status: 500 });
     }
 }

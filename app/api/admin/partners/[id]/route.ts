@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getAdminFromToken } from "@/lib/auth";
-import PartnerApplication from "@/models/PartnerApplication";
 import { sendPartnerApprovalEmail, sendPartnerRejectionEmail } from "@/lib/mail";
 
 export async function PATCH(
@@ -25,9 +24,10 @@ export async function PATCH(
             );
         }
 
-        await connectDB();
+        const application = await prisma.partnerApplication.findUnique({
+            where: { id }
+        });
 
-        const application = await PartnerApplication.findById(id);
         if (!application) {
             return NextResponse.json({ error: "Partner application not found" }, { status: 404 });
         }
@@ -36,65 +36,60 @@ export async function PATCH(
         const newStatus = isApproved ? "APPROVED" : "REJECTED";
 
         let generatedPassword = "";
+        let passwordHash = application.passwordHash;
+        let initialPasswordSent = application.initialPasswordSent;
+
         if (isApproved) {
-            // Generate a secure, memorable temporary password if not already set
             const randomDigits = Math.floor(100000 + Math.random() * 900000);
             generatedPassword = `Shree@${randomDigits}`;
             const bcrypt = (await import("bcryptjs")).default;
             const salt = await bcrypt.genSalt(10);
-            application.passwordHash = await bcrypt.hash(generatedPassword, salt);
-            application.initialPasswordSent = true;
+            passwordHash = await bcrypt.hash(generatedPassword, salt);
+            initialPasswordSent = true;
         }
 
-        application.status = newStatus;
-        application.isActive = isApproved;
-        application.reviewedAt = new Date();
-        application.reviewedBy = admin.username || "admin";
-        if (!isApproved && rejectionReason) {
-            application.rejectionReason = rejectionReason;
-        }
-
-        await application.save();
+        const updated = await prisma.partnerApplication.update({
+            where: { id },
+            data: {
+                status: newStatus,
+                isActive: isApproved,
+                reviewedAt: new Date(),
+                reviewedBy: admin.username || "admin",
+                ...(passwordHash ? { passwordHash } : {}),
+                initialPasswordSent,
+                ...(!isApproved && rejectionReason ? { rejectionReason } : {})
+            }
+        });
 
         // Send Email notification to user
         try {
             if (isApproved) {
                 await sendPartnerApprovalEmail({
-                    name: application.name,
-                    email: application.email,
-                    companyName: application.companyName,
-                    referenceNo: application.referenceNo,
-                    password: generatedPassword
+                    email: updated.email,
+                    name: updated.name,
+                    referenceNo: updated.referenceNo,
+                    password: generatedPassword,
+                    companyName: updated.companyName || undefined
                 });
-                console.log(`[APPROVAL EMAIL SENT] Sent approval confirmation with password to ${application.email}`);
             } else {
-                await sendPartnerRejectionEmail(
-                    {
-                        name: application.name,
-                        email: application.email,
-                        referenceNo: application.referenceNo
-                    },
-                    rejectionReason
-                );
-                console.log(`[REJECTION EMAIL SENT] Sent rejection notice to ${application.email}`);
+                await sendPartnerRejectionEmail({
+                    email: updated.email,
+                    name: updated.name,
+                    referenceNo: updated.referenceNo
+                }, rejectionReason || "Application criteria requirements not met.");
             }
-        } catch (mailErr) {
-            console.error("[EMAIL ERROR] Could not dispatch user notification:", mailErr);
+        } catch (emailErr) {
+            console.error("Failed to send partner status email:", emailErr);
         }
 
         return NextResponse.json({
             success: true,
-            message: isApproved
-                ? "Partner application approved and confirmation email sent!"
-                : "Partner application rejected and notification sent.",
-            partner: application
+            message: `Partner application ${isApproved ? "approved" : "rejected"} successfully`,
+            partner: updated
         });
     } catch (error) {
-        console.error("Error updating partner application:", error);
-        return NextResponse.json(
-            { error: "Failed to update partner application" },
-            { status: 500 }
-        );
+        console.error("Error updating partner status:", error);
+        return NextResponse.json({ error: "Failed to update partner application" }, { status: 500 });
     }
 }
 
@@ -109,12 +104,10 @@ export async function DELETE(
         }
 
         const { id } = await params;
-        await connectDB();
 
-        const deleted = await PartnerApplication.findByIdAndDelete(id);
-        if (!deleted) {
-            return NextResponse.json({ error: "Partner application not found" }, { status: 404 });
-        }
+        await prisma.partnerApplication.delete({
+            where: { id }
+        });
 
         return NextResponse.json({
             success: true,
@@ -122,9 +115,6 @@ export async function DELETE(
         });
     } catch (error) {
         console.error("Error deleting partner application:", error);
-        return NextResponse.json(
-            { error: "Failed to delete partner application" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Failed to delete partner application" }, { status: 500 });
     }
 }

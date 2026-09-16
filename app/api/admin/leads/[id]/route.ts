@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getAdminFromToken } from "@/lib/auth";
-import PartnerLead from "@/models/PartnerLead";
 
 export async function PATCH(
     req: Request,
@@ -17,53 +16,48 @@ export async function PATCH(
         const body = await req.json();
         const { leadStatus, payoutStatus, commissionRate, applicationAmount, disbursedAmount, leadNotes } = body;
 
-        await connectDB();
-        const lead = await PartnerLead.findById(id);
+        const lead = await prisma.partnerLead.findUnique({ where: { id } });
         if (!lead) {
             return NextResponse.json({ error: "File record not found" }, { status: 404 });
         }
 
-        if (leadStatus) {
-            lead.leadStatus = leadStatus;
-            if (leadStatus === "DISBURSED" && !lead.disbursedAt) {
-                lead.disbursedAt = new Date();
+        const nextAppAmount = applicationAmount !== undefined && !isNaN(Number(applicationAmount))
+            ? Number(applicationAmount)
+            : lead.applicationAmount;
+
+        const nextDisbursedAmount = disbursedAmount !== undefined && !isNaN(Number(disbursedAmount))
+            ? Number(disbursedAmount)
+            : lead.disbursedAmount;
+
+        const nextCommissionRate = commissionRate !== undefined && !isNaN(Number(commissionRate))
+            ? Number(commissionRate)
+            : lead.commissionRate;
+
+        const baseAmount = nextDisbursedAmount || nextAppAmount;
+        const nextCommissionAmount = Number((baseAmount * (nextCommissionRate / 100)).toFixed(2));
+
+        const updated = await prisma.partnerLead.update({
+            where: { id },
+            data: {
+                ...(leadStatus ? { leadStatus } : {}),
+                ...(leadStatus === "DISBURSED" && !lead.disbursedAt ? { disbursedAt: new Date() } : {}),
+                ...(payoutStatus ? { payoutStatus } : {}),
+                applicationAmount: nextAppAmount,
+                disbursedAmount: nextDisbursedAmount,
+                commissionRate: nextCommissionRate,
+                commissionAmount: nextCommissionAmount,
+                ...(leadNotes !== undefined ? { leadNotes } : {})
             }
-        }
-
-        if (payoutStatus) {
-            lead.payoutStatus = payoutStatus;
-        }
-
-        if (applicationAmount !== undefined && !isNaN(Number(applicationAmount))) {
-            lead.applicationAmount = Number(applicationAmount);
-        }
-
-        if (disbursedAmount !== undefined && !isNaN(Number(disbursedAmount))) {
-            lead.disbursedAmount = Number(disbursedAmount);
-        }
-
-        if (commissionRate !== undefined && !isNaN(Number(commissionRate))) {
-            lead.commissionRate = Number(commissionRate);
-        }
-
-        // Recalculate commission amount
-        const baseAmount = lead.disbursedAmount || lead.applicationAmount;
-        lead.commissionAmount = Number((baseAmount * (lead.commissionRate / 100)).toFixed(2));
-
-        if (leadNotes !== undefined) {
-            lead.leadNotes = leadNotes;
-        }
-
-        await lead.save();
+        });
 
         return NextResponse.json({
             success: true,
-            message: "Partner file status and commission updated successfully",
-            lead
+            message: "Lead file updated successfully",
+            lead: updated
         });
     } catch (error) {
-        console.error("Admin update lead error:", error);
-        return NextResponse.json({ error: "Failed to update partner file" }, { status: 500 });
+        console.error("Error updating lead file:", error);
+        return NextResponse.json({ error: "Failed to update lead file" }, { status: 500 });
     }
 }
 
@@ -78,19 +72,15 @@ export async function DELETE(
         }
 
         const { id } = await params;
-        await connectDB();
 
-        const deleted = await PartnerLead.findByIdAndDelete(id);
-        if (!deleted) {
-            return NextResponse.json({ error: "File record not found" }, { status: 404 });
-        }
+        await prisma.partnerLead.delete({ where: { id } });
 
         return NextResponse.json({
             success: true,
-            message: "Partner file deleted successfully"
+            message: "Lead file deleted successfully"
         });
     } catch (error) {
-        console.error("Admin delete lead error:", error);
-        return NextResponse.json({ error: "Failed to delete partner file" }, { status: 500 });
+        console.error("Error deleting lead file:", error);
+        return NextResponse.json({ error: "Failed to delete lead file" }, { status: 500 });
     }
 }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Blog from "@/models/Blog";
+import { prisma } from "@/lib/prisma";
 import { getAdminFromToken } from "@/lib/auth";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
@@ -16,40 +15,39 @@ function generateSlug(text: string): string {
 // GET /api/blogs — Public list with category, search & tag filtering
 export async function GET(req: Request) {
     try {
-        await connectDB();
         const { searchParams } = new URL(req.url);
         const category = searchParams.get("category");
         const search = searchParams.get("search");
         const tag = searchParams.get("tag");
         const adminMode = searchParams.get("admin") === "true";
 
-        const filter: Record<string, unknown> = {};
+        const where: Record<string, unknown> = {};
 
-        // If not requesting from admin desk, only show published articles
         if (!adminMode) {
-            filter.published = true;
+            where.published = true;
         }
 
         if (category && category !== "ALL") {
-            filter.category = category;
+            where.category = category;
         }
 
         if (tag) {
-            filter.tags = tag;
+            where.tags = { has: tag };
         }
 
         if (search && search.trim()) {
-            const regex = { $regex: search.trim(), $options: "i" };
-            filter.$or = [
-                { title: regex },
-                { excerpt: regex },
-                { category: regex },
-                { tags: regex },
-                { author: regex }
+            where.OR = [
+                { title: { contains: search.trim(), mode: "insensitive" } },
+                { excerpt: { contains: search.trim(), mode: "insensitive" } },
+                { category: { contains: search.trim(), mode: "insensitive" } },
+                { author: { contains: search.trim(), mode: "insensitive" } }
             ];
         }
 
-        const blogs = await Blog.find(filter).sort({ createdAt: -1 });
+        const blogs = await prisma.blog.findMany({
+            where,
+            orderBy: { createdAt: "desc" }
+        });
         return NextResponse.json({ success: true, blogs });
     } catch (error) {
         console.error("Error fetching blogs:", error);
@@ -64,8 +62,6 @@ export async function POST(req: Request) {
         if (!admin) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
-
-        await connectDB();
 
         const formData = await req.formData();
         const title = formData.get("title") as string;
@@ -84,7 +80,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Title, excerpt, and content are required." }, { status: 400 });
         }
 
-        // If an image file is uploaded, upload to Cloudinary
         if (imageFile && imageFile.size > 0) {
             const bytes = await imageFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
@@ -92,13 +87,12 @@ export async function POST(req: Request) {
             coverImage = uploadResult.url;
         }
 
-        // Generate base unique slug
         let baseSlug = generateSlug(title);
         if (!baseSlug) baseSlug = `post-${Date.now()}`;
         let uniqueSlug = baseSlug;
         let counter = 1;
 
-        while (await Blog.findOne({ slug: uniqueSlug })) {
+        while (await prisma.blog.findUnique({ where: { slug: uniqueSlug } })) {
             uniqueSlug = `${baseSlug}-${counter}`;
             counter++;
         }
@@ -108,19 +102,21 @@ export async function POST(req: Request) {
             .map(t => t.trim())
             .filter(Boolean);
 
-        const newBlog = await Blog.create({
-            title,
-            slug: uniqueSlug,
-            excerpt,
-            content,
-            category,
-            coverImage,
-            author,
-            authorRole,
-            readTime,
-            tags,
-            published,
-            views: 0
+        const newBlog = await prisma.blog.create({
+            data: {
+                title,
+                slug: uniqueSlug,
+                excerpt,
+                content,
+                category,
+                coverImage,
+                author,
+                authorRole,
+                readTime,
+                tags,
+                published,
+                views: 0
+            }
         });
 
         return NextResponse.json({ success: true, message: "Blog published successfully", blog: newBlog }, { status: 201 });

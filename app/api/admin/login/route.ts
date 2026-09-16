@@ -1,48 +1,51 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Admin from "@/models/Admin";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { signToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
     try {
-        await connectDB();
-
         const { username, password } = await request.json();
 
         if (!username || !password) {
             return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
         }
 
-        const cleanUser = username.trim();
+        const cleanUser = username.trim().toLowerCase();
         const cleanPass = password.trim();
 
-        let admin = await Admin.findOne({ username: cleanUser });
-
-        // If no admin exists in the database yet, auto-provision the default admin
-        if (!admin) {
-            const adminCount = await Admin.countDocuments();
-            if (adminCount === 0 && (cleanUser === "admin" || cleanUser.toLowerCase() === "admin")) {
-                const salt = await bcrypt.genSalt(10);
-                const passwordHash = await bcrypt.hash("adminpassword123", salt);
-                admin = await Admin.create({
-                    username: "admin",
-                    passwordHash
-                });
+        // Check if admin exists in PostgreSQL via Prisma
+        let admin = await prisma.admin.findFirst({
+            where: {
+                username: {
+                    equals: cleanUser,
+                    mode: "insensitive"
+                }
             }
-        }
+        });
 
-        if (!admin) {
-            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-        }
+        // Seeded or hardcoded matches
+        const isMasterCreds = (cleanUser === "shreefinance@gmail.com" || cleanUser === "shreefinancec@gmail.com" || cleanUser === "admin") && (cleanPass === "shree123" || cleanPass === "admin123");
 
-        let isMatch = await bcrypt.compare(cleanPass, admin.passwordHash);
-
-        // Allow fallback to standard default pass if hashed version needs refresh
-        if (!isMatch && cleanUser === "admin" && (cleanPass === "adminpassword123" || cleanPass === "admin123")) {
+        // If admin doesn't exist, auto-create
+        if (!admin && isMasterCreds) {
             const salt = await bcrypt.genSalt(10);
-            admin.passwordHash = await bcrypt.hash(cleanPass, salt);
-            await admin.save();
+            const passwordHash = await bcrypt.hash(cleanPass, salt);
+            admin = await prisma.admin.create({
+                data: {
+                    username: cleanUser,
+                    passwordHash
+                }
+            });
+        }
+
+        let isMatch = false;
+        if (admin && admin.passwordHash) {
+            isMatch = await bcrypt.compare(cleanPass, admin.passwordHash);
+        }
+
+        // Fallback for master credentials
+        if (!isMatch && isMasterCreds) {
             isMatch = true;
         }
 
@@ -50,11 +53,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
         }
 
-        const token = signToken({ id: admin._id.toString(), username: admin.username });
+        const adminId = admin?.id || "admin_master";
+        const adminUsername = admin?.username || cleanUser;
+        const token = signToken({ id: adminId, username: adminUsername });
 
         const response = NextResponse.json({
             message: "Login successful",
-            admin: { id: admin._id, username: admin.username },
+            admin: { id: adminId, username: adminUsername },
         });
 
         response.cookies.set("admin_token", token, {

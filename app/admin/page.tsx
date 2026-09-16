@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 
 interface AdminBlog {
-    _id: string;
+    id: string;
     title: string;
     slug: string;
     excerpt: string;
@@ -62,7 +62,7 @@ interface AdminBlog {
 }
 
 interface Banner {
-    _id: string;
+    id: string;
     imageUrl: string;
     publicId: string;
     title: string;
@@ -72,7 +72,7 @@ interface Banner {
 }
 
 interface PartnerApplication {
-    _id: string;
+    id: string;
     name: string;
     email: string;
     mobile: string;
@@ -95,7 +95,7 @@ interface PartnerApplication {
 }
 
 interface PartnerSubmittedFile {
-    _id: string;
+    id: string;
     referenceNo: string;
     partnerId: string;
     partnerName: string;
@@ -400,7 +400,7 @@ export default function AdminDashboardPage() {
             if (res.ok) {
                 showToast("success", "Partner approved! Login credentials & temporary password sent via email.");
                 fetchPartners();
-                if (selectedPartner?._id === partnerId) {
+                if (selectedPartner?.id === partnerId) {
                     setSelectedPartner(data.partner || { ...selectedPartner, status: "APPROVED", isActive: true });
                 }
             } else {
@@ -431,7 +431,7 @@ export default function AdminDashboardPage() {
                 setRejectionModalOpen(false);
                 setRejectingPartnerId(null);
                 fetchPartners();
-                if (selectedPartner?._id === rejectingPartnerId) {
+                if (selectedPartner?.id === rejectingPartnerId) {
                     setSelectedPartner(data.partner || { ...selectedPartner, status: "REJECTED", isActive: false, rejectionReason });
                 }
             } else {
@@ -453,7 +453,7 @@ export default function AdminDashboardPage() {
             const res = await fetch(`/api/admin/partners/${partnerId}`, { method: "DELETE" });
             if (res.ok) {
                 showToast("success", "Application record deleted.");
-                if (selectedPartner?._id === partnerId) setSelectedPartner(null);
+                if (selectedPartner?.id === partnerId) setSelectedPartner(null);
                 fetchPartners();
             } else {
                 showToast("error", "Failed to delete partner record.");
@@ -470,10 +470,10 @@ export default function AdminDashboardPage() {
     // =========================================================================
     const handleSaveFileUpdate = async () => {
         if (!selectedFileItem) return;
-        setActionLoadingId(selectedFileItem._id);
+        setActionLoadingId(selectedFileItem.id);
 
         try {
-            const res = await fetch(`/api/admin/leads/${selectedFileItem._id}`, {
+            const res = await fetch(`/api/admin/leads/${selectedFileItem.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -625,7 +625,7 @@ export default function AdminDashboardPage() {
     };
 
     const handleOpenEditBlog = (blog: AdminBlog) => {
-        setEditingBlogId(blog._id);
+        setEditingBlogId(blog.id);
         setBlogTitle(blog.title);
         setBlogExcerpt(blog.excerpt);
         setBlogContent(blog.content);
@@ -713,7 +713,7 @@ export default function AdminDashboardPage() {
             const formData = new FormData();
             formData.append("published", String(!blog.published));
 
-            const res = await fetch(`/api/blogs/${blog._id}`, {
+            const res = await fetch(`/api/blogs/${blog.id}`, {
                 method: "PATCH",
                 body: formData
             });
@@ -997,10 +997,10 @@ export default function AdminDashboardPage() {
                                                 const isPending = p.status === "PENDING";
                                                 const isApproved = p.status === "APPROVED";
                                                 const isRejected = p.status === "REJECTED";
-                                                const isLoading = actionLoadingId === p._id;
+                                                const isLoading = actionLoadingId === p.id;
 
                                                 return (
-                                                    <tr key={p._id} className="hover:bg-slate-100/30 transition-colors">
+                                                    <tr key={p.id} className="hover:bg-slate-100/30 transition-colors">
                                                         <td className="py-4 px-5 align-top">
                                                             <span className="font-mono text-[#0284c7] font-bold block">
                                                                 #{p.referenceNo}
@@ -1072,7 +1072,7 @@ export default function AdminDashboardPage() {
                                                                     <Button
                                                                         size="sm"
                                                                         disabled={isLoading}
-                                                                        onClick={() => handleApprovePartner(p._id)}
+                                                                        onClick={() => handleApprovePartner(p.id)}
                                                                         className="h-8 px-3 rounded-lg bg-[#0284c7] hover:bg-[#0369a1] text-slate-900 font-black text-xs uppercase cursor-pointer"
                                                                     >
                                                                         {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "✓ Approve"}
@@ -1082,7 +1082,7 @@ export default function AdminDashboardPage() {
                                                                         variant="outline"
                                                                         disabled={isLoading}
                                                                         onClick={() => {
-                                                                            setRejectingPartnerId(p._id);
+                                                                            setRejectingPartnerId(p.id);
                                                                             setRejectionModalOpen(true);
                                                                         }}
                                                                         className="h-8 px-2.5 rounded-lg border-rose-500/40 text-rose-300 hover:bg-rose-950 hover:text-slate-900 text-xs cursor-pointer"
@@ -1094,7 +1094,7 @@ export default function AdminDashboardPage() {
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
-                                                                    onClick={() => handleDeletePartner(p._id)}
+                                                                    onClick={() => handleDeletePartner(p.id)}
                                                                     className="h-8 px-2 text-slate-500 hover:text-rose-400 cursor-pointer"
                                                                     title="Delete record"
                                                                 >
@@ -1117,8 +1117,20 @@ export default function AdminDashboardPage() {
                 {/* TAB 2: PARTNER SUBMITTED FILES & PIPELINE */}
                 {/* ========================================================================= */}
                 {activeTab === "files" && (() => {
+                    // Compute live dynamic totals from loaded files array
+                    const activeDisbursedVolume = filesMetrics.totalDisbursedVolume > 0 
+                        ? filesMetrics.totalDisbursedVolume 
+                        : partnerFiles.reduce((sum, f) => sum + (f.disbursedAmount || f.applicationAmount || 0), 0);
+
+                    const activeCommissions = filesMetrics.totalCommissions > 0 
+                        ? filesMetrics.totalCommissions 
+                        : Number(partnerFiles.reduce((sum, f) => sum + (f.commissionAmount || ((f.applicationAmount || 0) * ((f.commissionRate || 2.0) / 100))), 0).toFixed(2));
+
+                    const activeTotalCount = filesMetrics.totalCount > 0 ? filesMetrics.totalCount : partnerFiles.length;
+                    const activeInProcessCount = filesMetrics.inProcessCount > 0 ? filesMetrics.inProcessCount : partnerFiles.filter(f => f.leadStatus !== "REJECTED").length;
+
                     // Find active selected partner if any
-                    const currentSelectedPartner = partners.find(p => p._id === selectedPartnerFilterId || p.referenceNo === selectedPartnerFilterId);
+                    const currentSelectedPartner = partners.find(p => p.id === selectedPartnerFilterId || p.referenceNo === selectedPartnerFilterId);
 
                     return (
                         <div className="space-y-6">
@@ -1148,7 +1160,7 @@ export default function AdminDashboardPage() {
                                     >
                                         <option value="ALL">🌐 All Partners ({partners.length} registered partners)</option>
                                         {partners.map(p => (
-                                            <option key={p._id} value={p._id}>
+                                            <option key={p.id} value={p.id}>
                                                 👤 {p.name} ({p.referenceNo}) • {p.city || "India"}
                                             </option>
                                         ))}
@@ -1204,7 +1216,7 @@ export default function AdminDashboardPage() {
                                         <div className="text-right">
                                             <span className="text-[10px] uppercase font-bold text-slate-500">Partner Total Payout</span>
                                             <p className="text-2xl font-black text-black">
-                                                ₹{filesMetrics.totalCommissions.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                ₹{activeCommissions.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </p>
                                         </div>
                                     </div>
@@ -1238,30 +1250,37 @@ export default function AdminDashboardPage() {
                                     <span className="text-xs font-bold text-slate-500 uppercase">
                                         {selectedPartnerFilterId === "ALL" ? "Total Files Filed" : "Partner Filed Files"}
                                     </span>
-                                    <p className="text-3xl font-black text-black">{filesMetrics.totalCount}</p>
-                                    <p className="text-[10px] text-slate-500">Volume: ₹{(filesMetrics.totalFiledVolume / 100000).toFixed(1)}L</p>
+                                    <p className="text-3xl font-black text-black">{activeTotalCount}</p>
+                                    <p className="text-[10px] text-slate-500">Volume: ₹{(activeDisbursedVolume / 100000).toFixed(1)}L</p>
                                 </div>
 
                                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
                                     <span className="text-xs font-bold text-sky-800 uppercase">In Process Cases</span>
-                                    <p className="text-3xl font-black text-black">{filesMetrics.inProcessCount}</p>
+                                    <p className="text-3xl font-black text-black">{activeInProcessCount}</p>
                                     <p className="text-[10px] text-slate-500">Active in bank underwriting</p>
                                 </div>
 
                                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
-                                    <span className="text-xs font-bold text-[#0284c7] uppercase">Disbursed Volume</span>
+                                    <span className="text-xs font-bold text-[#0284c7] uppercase">Total Disbursed</span>
                                     <p className="text-3xl font-black text-black">
-                                        ₹{(filesMetrics.totalDisbursedVolume / 100000).toFixed(1)} Lakhs
+                                        {activeDisbursedVolume >= 100000 
+                                            ? `₹${(activeDisbursedVolume / 100000).toFixed(2)} Lakhs` 
+                                            : `₹${activeDisbursedVolume.toLocaleString("en-IN")}`
+                                        }
                                     </p>
-                                    <p className="text-[10px] text-slate-500">{filesMetrics.disbursedCount} cases completed</p>
+                                    <p className="text-[10px] text-slate-500 font-bold">
+                                        Exact: ₹{activeDisbursedVolume.toLocaleString("en-IN")} • {partnerFiles.length} cases
+                                    </p>
                                 </div>
 
                                 <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
                                     <span className="text-xs font-bold text-[#0284c7] uppercase">Total Commissions</span>
                                     <p className="text-3xl font-black text-black">
-                                        ₹{filesMetrics.totalCommissions.toLocaleString("en-IN")}
+                                        ₹{activeCommissions.toLocaleString("en-IN")}
                                     </p>
-                                    <p className="text-[10px] text-slate-500">Calculated on disbursed amounts</p>
+                                    <p className="text-[10px] text-slate-500 font-bold">
+                                        Calculated from active cases
+                                    </p>
                                 </div>
                             </div>
 
@@ -1379,9 +1398,9 @@ export default function AdminDashboardPage() {
                                                 <th className="py-4 px-5">Category / Product</th>
                                                 <th className="py-4 px-5">Bank</th>
                                                 <th className="py-4 px-5">RM Name</th>
-                                                <th className="py-4 px-5">Disbursed Amount</th>
+                                                <th className="py-4 px-5">Loan / Disbursed Amount</th>
                                                 <th className="py-4 px-5">Commission Amount</th>
-                                                <th className="py-4 px-5">Disbursed Date</th>
+                                                <th className="py-4 px-5">Date (Applied / Disbursed)</th>
                                                 <th className="py-4 px-5">Status</th>
                                                 <th className="py-4 px-5 text-right">Actions</th>
                                             </tr>
@@ -1391,7 +1410,7 @@ export default function AdminDashboardPage() {
                                                 const isDisbursed = file.leadStatus === "DISBURSED";
 
                                                 return (
-                                                    <tr key={file._id} className="hover:bg-slate-100/30 transition-colors">
+                                                    <tr key={file.id} className="hover:bg-slate-100/30 transition-colors">
                                                         <td className="py-4 px-5 align-top">
                                                             <span className="font-mono text-[#0284c7] font-bold block">
                                                                 #{file.referenceNo}
@@ -1435,12 +1454,17 @@ export default function AdminDashboardPage() {
                                                         </td>
 
                                                         <td className="py-4 px-5 align-top">
-                                                            {isDisbursed || file.disbursedAmount ? (
-                                                                <span className="font-black text-sm text-[#0284c7] block">
-                                                                    ₹{(file.disbursedAmount || file.applicationAmount).toLocaleString("en-IN")}
+                                                            <span className="font-black text-sm text-slate-900 block">
+                                                                ₹{(file.disbursedAmount || file.applicationAmount || 0).toLocaleString("en-IN")}
+                                                            </span>
+                                                            {isDisbursed ? (
+                                                                <span className="text-[10px] text-emerald-600 font-bold block">
+                                                                    Disbursed
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-slate-500 text-[11px] font-medium">—</span>
+                                                                <span className="text-[10px] text-slate-500 font-medium block">
+                                                                    Applied Amount
+                                                                </span>
                                                             )}
                                                         </td>
 
@@ -1448,25 +1472,30 @@ export default function AdminDashboardPage() {
                                                             <span className="font-black text-[#0284c7] text-sm block">
                                                                 ₹{Number(file.commissionAmount || (file.applicationAmount * (file.commissionRate / 100))).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                             </span>
+                                                            <span className="text-[10px] text-slate-500 font-medium block">
+                                                                Rate: {file.commissionRate || 2.0}%
+                                                            </span>
                                                         </td>
 
                                                         <td className="py-4 px-5 align-top">
-                                                            {file.disbursedAt || isDisbursed ? (
-                                                                <span className="text-slate-900 font-bold text-xs flex items-center gap-1">
-                                                                    <Calendar className="h-3.5 w-3.5 text-[#0284c7]" />
-                                                                    {file.disbursedAt ? new Date(file.disbursedAt).toLocaleDateString("en-IN", {
+                                                            <span className="text-slate-900 font-bold text-xs flex items-center gap-1">
+                                                                <Calendar className="h-3.5 w-3.5 text-[#0284c7]" />
+                                                                {file.disbursedAt
+                                                                    ? new Date(file.disbursedAt).toLocaleDateString("en-IN", {
                                                                         day: "numeric",
                                                                         month: "short",
                                                                         year: "numeric"
-                                                                    }) : new Date(file.createdAt).toLocaleDateString("en-IN", {
+                                                                    })
+                                                                    : new Date(file.createdAt || Date.now()).toLocaleDateString("en-IN", {
                                                                         day: "numeric",
                                                                         month: "short",
                                                                         year: "numeric"
-                                                                    })}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-slate-500 text-[11px] font-medium">—</span>
-                                                            )}
+                                                                    })
+                                                                }
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500 block">
+                                                                {file.disbursedAt ? "Disbursed Date" : "Applied Date"}
+                                                            </span>
                                                         </td>
 
                                                         <td className="py-4 px-5 align-top">
@@ -1522,7 +1551,7 @@ export default function AdminDashboardPage() {
                                                             <Button
                                                                 size="sm"
                                                                 variant="ghost"
-                                                                onClick={() => handleDeleteFile(file._id)}
+                                                                onClick={() => handleDeleteFile(file.id)}
                                                                 className="h-8 px-2 text-slate-500 hover:text-rose-400 cursor-pointer"
                                                             >
                                                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1537,22 +1566,21 @@ export default function AdminDashboardPage() {
                                             <tfoot className="border-t-2 border-slate-300 bg-sky-50/70 font-black text-xs">
                                                 <tr>
                                                     <td colSpan={5} className="py-4 px-5 text-slate-900 font-extrabold text-right uppercase tracking-wider text-[11px]">
-                                                        Total Summary:
+                                                        TOTAL SUMMARY:
                                                     </td>
                                                     <td className="py-4 px-5 bg-sky-100/90 align-top">
-                                                        <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">Total Disbursed</span>
+                                                        <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">TOTAL DISBURSED / APPLIED</span>
                                                         <span className="font-black text-sm text-[#0284c7] block">
                                                             ₹{partnerFiles.reduce((sum, f) => {
-                                                                const isDisb = f.leadStatus === "DISBURSED";
-                                                                const amt = isDisb || f.disbursedAmount ? (Number(f.disbursedAmount) || Number(f.applicationAmount) || 0) : 0;
+                                                                const amt = Number(f.disbursedAmount) || Number(f.applicationAmount) || 0;
                                                                 return sum + amt;
-                                                            }, 0).toLocaleString("en-IN")}
+                                                            }, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                         </span>
                                                     </td>
                                                     <td className="py-4 px-5 bg-sky-100/90 align-top">
-                                                        <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">Total Commission</span>
+                                                        <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">TOTAL COMMISSION</span>
                                                         <span className="font-black text-sm text-[#0284c7] block">
-                                                            ₹{partnerFiles.reduce((sum, f) => sum + (Number(f.commissionAmount) || (Number(f.disbursedAmount || f.applicationAmount) * ((Number(f.commissionRate) || 2.0) / 100))), 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            ₹{partnerFiles.reduce((sum, f) => sum + (Number(f.commissionAmount) || ((Number(f.disbursedAmount || f.applicationAmount || 0)) * ((Number(f.commissionRate) || 2.0) / 100))), 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                         </span>
                                                     </td>
                                                     <td colSpan={3} className="py-4 px-5"></td>
@@ -1811,14 +1839,14 @@ export default function AdminDashboardPage() {
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     {banners.map(banner => (
                                         <div
-                                            key={banner._id}
+                                            key={banner.id}
                                             className="bg-white/95 border border-slate-200 rounded-2xl overflow-hidden shadow-lg space-y-3 p-3 group"
                                         >
                                             <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden bg-[#f8fafc]">
                                                 <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover" />
                                                 <button
-                                                    onClick={() => handleDeleteBanner(banner._id)}
-                                                    disabled={deleting === banner._id}
+                                                    onClick={() => handleDeleteBanner(banner.id)}
+                                                    disabled={deleting === banner.id}
                                                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-950/80 text-rose-300 hover:bg-rose-900 cursor-pointer transition-colors"
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
@@ -1895,7 +1923,7 @@ export default function AdminDashboardPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {blogsList.map((blog) => (
                                     <div
-                                        key={blog._id}
+                                        key={blog.id}
                                         className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
                                     >
                                         <div>
@@ -1989,8 +2017,8 @@ export default function AdminDashboardPage() {
                                                 </Button>
 
                                                 <button
-                                                    onClick={() => handleDeleteBlog(blog._id)}
-                                                    disabled={blogDeletingId === blog._id}
+                                                    onClick={() => handleDeleteBlog(blog.id)}
+                                                    disabled={blogDeletingId === blog.id}
                                                     className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
                                                     title="Delete Article"
                                                 >
@@ -2076,7 +2104,7 @@ export default function AdminDashboardPage() {
                                 </Button>
                                 {selectedPartner.status === "PENDING" && (
                                     <Button
-                                        onClick={() => handleApprovePartner(selectedPartner._id)}
+                                        onClick={() => handleApprovePartner(selectedPartner.id)}
                                         className="h-10 px-5 rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-slate-900 font-black text-xs uppercase cursor-pointer"
                                     >
                                         ✓ Approve & Issue Password

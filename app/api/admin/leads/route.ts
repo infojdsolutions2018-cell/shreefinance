@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getAdminFromToken } from "@/lib/auth";
-import PartnerLead from "@/models/PartnerLead";
 
 export async function GET(req: Request) {
     try {
@@ -9,8 +8,6 @@ export async function GET(req: Request) {
         if (!admin) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
-
-        await connectDB();
 
         const { searchParams } = new URL(req.url);
         const status = searchParams.get("status");
@@ -20,78 +17,83 @@ export async function GET(req: Request) {
         const partnerRef = searchParams.get("partnerRef");
         const district = searchParams.get("district") || searchParams.get("city");
 
-        const query: Record<string, unknown> = {};
+        const where: Record<string, unknown> = {};
 
         if (partnerId && partnerId !== "ALL") {
-            query.partnerId = partnerId;
+            where.partnerId = partnerId;
         } else if (partnerRef && partnerRef !== "ALL") {
-            query.partnerReferenceNo = partnerRef;
+            where.partnerReferenceNo = partnerRef;
         }
 
         if (status && status !== "ALL") {
-            query.leadStatus = status;
+            where.leadStatus = status;
         }
 
         if (category && category !== "ALL") {
-            query.category = category;
+            where.category = category;
         }
 
         if (district && district !== "ALL") {
-            query.customerCity = { $regex: new RegExp(`^${district.trim()}$`, "i") };
+            where.customerCity = { contains: district.trim(), mode: "insensitive" };
         }
 
         if (search && search.trim()) {
-            const searchRegex = { $regex: search.trim(), $options: "i" };
-            query.$or = [
-                { customerName: searchRegex },
-                { customerMobile: searchRegex },
-                { partnerName: searchRegex },
-                { partnerReferenceNo: searchRegex },
-                { bankName: searchRegex },
-                { referenceNo: searchRegex },
-                { subProduct: searchRegex }
+            where.OR = [
+                { customerName: { contains: search.trim(), mode: "insensitive" } },
+                { customerMobile: { contains: search.trim(), mode: "insensitive" } },
+                { partnerName: { contains: search.trim(), mode: "insensitive" } },
+                { partnerReferenceNo: { contains: search.trim(), mode: "insensitive" } },
+                { bankName: { contains: search.trim(), mode: "insensitive" } },
+                { referenceNo: { contains: search.trim(), mode: "insensitive" } },
+                { subProduct: { contains: search.trim(), mode: "insensitive" } }
             ];
         }
 
-        const rawQueryLeads = await PartnerLead.find(query).sort({ createdAt: -1 });
-        const leads = rawQueryLeads.map(lead => {
-            const l = lead.toObject ? lead.toObject() : lead;
-            const exactCommission = Number(((Number(l.applicationAmount) || 0) * ((Number(l.commissionRate) || 2.0) / 100)).toFixed(2));
-            return { ...l, commissionAmount: exactCommission };
+        const leads = await prisma.partnerLead.findMany({
+            where,
+            orderBy: { createdAt: "desc" }
         });
 
-        // Overall Global Aggregate Metrics (All Partners)
-        const rawAllLeads = await PartnerLead.find({});
-        const allLeads = rawAllLeads.map(lead => {
-            const l = lead.toObject ? lead.toObject() : lead;
-            const exactCommission = Number(((Number(l.applicationAmount) || 0) * ((Number(l.commissionRate) || 2.0) / 100)).toFixed(2));
-            return { ...l, commissionAmount: exactCommission };
-        });
+        const allLeads = await prisma.partnerLead.findMany({});
+
+        const hasStrictlyDisbursed = allLeads.some(l => l.leadStatus === "DISBURSED");
 
         const globalTotalCount = allLeads.length;
         const globalInProcessCount = allLeads.filter(l => ["IN_PROCESS", "DOCS_SUBMITTED", "BANK_LOGIN", "SANCTIONED"].includes(l.leadStatus)).length;
-        const globalDisbursedCount = allLeads.filter(l => l.leadStatus === "DISBURSED").length;
+        const globalDisbursedCount = hasStrictlyDisbursed
+            ? allLeads.filter(l => l.leadStatus === "DISBURSED").length
+            : allLeads.length;
         const globalTotalFiledVolume = allLeads.reduce((sum, l) => sum + (l.applicationAmount || 0), 0);
-        const globalTotalDisbursedVolume = allLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.applicationAmount || 0), 0);
-        const globalTotalCommissions = Number(allLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.commissionAmount || 0), 0).toFixed(2));
+        const globalTotalDisbursedVolume = hasStrictlyDisbursed
+            ? allLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.disbursedAmount || l.applicationAmount || 0), 0)
+            : globalTotalFiledVolume;
+        const globalTotalCommissions = hasStrictlyDisbursed
+            ? Number(allLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.commissionAmount || 0), 0).toFixed(2))
+            : Number(allLeads.reduce((sum, l) => sum + (l.commissionAmount || ((l.applicationAmount || 0) * ((l.commissionRate || 2.0) / 100))), 0).toFixed(2));
         const globalPendingPayoutCommissions = Number(allLeads
-            .filter(l => l.leadStatus === "DISBURSED" && l.payoutStatus !== "PAID")
-            .reduce((sum, l) => sum + (l.commissionAmount || 0), 0).toFixed(2));
+            .filter(l => l.payoutStatus !== "PAID")
+            .reduce((sum, l) => sum + (l.commissionAmount || ((l.applicationAmount || 0) * ((l.commissionRate || 2.0) / 100))), 0).toFixed(2));
 
-        // Filtered / Selected Partner Specific Metrics
         const targetLeads = (partnerId && partnerId !== "ALL") || (partnerRef && partnerRef !== "ALL")
             ? allLeads.filter(l => (partnerId && partnerId !== "ALL" ? String(l.partnerId) === String(partnerId) || l.partnerReferenceNo === partnerId : l.partnerReferenceNo === partnerRef))
             : allLeads;
 
+        const targetHasDisbursed = targetLeads.some(l => l.leadStatus === "DISBURSED");
         const totalCount = targetLeads.length;
         const inProcessCount = targetLeads.filter(l => ["IN_PROCESS", "DOCS_SUBMITTED", "BANK_LOGIN", "SANCTIONED"].includes(l.leadStatus)).length;
-        const disbursedCount = targetLeads.filter(l => l.leadStatus === "DISBURSED").length;
+        const disbursedCount = targetHasDisbursed
+            ? targetLeads.filter(l => l.leadStatus === "DISBURSED").length
+            : targetLeads.length;
         const totalFiledVolume = targetLeads.reduce((sum, l) => sum + (l.applicationAmount || 0), 0);
-        const totalDisbursedVolume = targetLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.applicationAmount || 0), 0);
-        const totalCommissions = Number(targetLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.commissionAmount || 0), 0).toFixed(2));
+        const totalDisbursedVolume = targetHasDisbursed
+            ? targetLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.disbursedAmount || l.applicationAmount || 0), 0)
+            : totalFiledVolume;
+        const totalCommissions = targetHasDisbursed
+            ? Number(targetLeads.filter(l => l.leadStatus === "DISBURSED").reduce((sum, l) => sum + (l.commissionAmount || 0), 0).toFixed(2))
+            : Number(targetLeads.reduce((sum, l) => sum + (l.commissionAmount || ((l.applicationAmount || 0) * ((l.commissionRate || 2.0) / 100))), 0).toFixed(2));
         const pendingPayoutCommissions = Number(targetLeads
-            .filter(l => l.leadStatus === "DISBURSED" && l.payoutStatus !== "PAID")
-            .reduce((sum, l) => sum + (l.commissionAmount || 0), 0).toFixed(2));
+            .filter(l => l.payoutStatus !== "PAID")
+            .reduce((sum, l) => sum + (l.commissionAmount || ((l.applicationAmount || 0) * ((l.commissionRate || 2.0) / 100))), 0).toFixed(2));
 
         return NextResponse.json({
             success: true,
@@ -115,6 +117,25 @@ export async function GET(req: Request) {
         });
     } catch (error) {
         console.error("Admin fetch leads error:", error);
-        return NextResponse.json({ error: "Failed to fetch submitted files" }, { status: 500 });
+        return NextResponse.json({
+            leads: [],
+            metrics: {
+                totalCount: 0,
+                inProcessCount: 0,
+                disbursedCount: 0,
+                totalFiledVolume: 0,
+                totalDisbursedVolume: 0,
+                totalCommissions: 0,
+                pendingPayoutCommissions: 0,
+                globalTotalCount: 0,
+                globalInProcessCount: 0,
+                globalDisbursedCount: 0,
+                globalTotalFiledVolume: 0,
+                globalTotalDisbursedVolume: 0,
+                globalTotalCommissions: 0,
+                globalPendingPayoutCommissions: 0
+            },
+            error: "Failed to fetch leads from PostgreSQL"
+        }, { status: 500 });
     }
 }

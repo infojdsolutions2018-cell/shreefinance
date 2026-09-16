@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -13,6 +13,17 @@ export default function AdminLoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    // Check if already authenticated
+    useEffect(() => {
+        fetch("/api/admin/me")
+            .then((res) => {
+                if (res.ok) {
+                    window.location.href = "/admin";
+                }
+            })
+            .catch(() => {});
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -22,7 +33,10 @@ export default function AdminLoginPage() {
             const res = await fetch("/api/admin/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ 
+                    username: username.trim(), 
+                    password: password.trim() 
+                }),
             });
 
             const data = await res.json();
@@ -33,7 +47,7 @@ export default function AdminLoginPage() {
                 return;
             }
 
-            router.push("/admin");
+            window.location.href = "/admin";
         } catch {
             setError("Something went wrong. Please try again.");
             setLoading(false);
@@ -41,7 +55,7 @@ export default function AdminLoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white text-white relative overflow-hidden px-4 font-sans">
+        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white relative overflow-hidden px-4 font-sans">
             {/* Background effects */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#0284c7]/10 rounded-full blur-[120px]" />
@@ -54,7 +68,7 @@ export default function AdminLoginPage() {
                 transition={{ duration: 0.5 }}
                 className="relative z-10 w-full max-w-md mx-auto"
             >
-                <div className="bg-white border border-slate-800 rounded-3xl p-8 md:p-10 shadow-2xl">
+                <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 md:p-10 shadow-2xl">
                     {/* Logo / Title */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[#0284c7]/15 border border-[#0284c7]/30 text-[#0284c7] shadow-lg mb-4">
@@ -67,14 +81,14 @@ export default function AdminLoginPage() {
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Username */}
                         <div className="space-y-2">
-                            <label className="text-xs font-black uppercase text-slate-400">Username</label>
+                            <label className="text-xs font-black uppercase text-slate-400">Username or Email</label>
                             <div className="relative">
                                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <input
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="Enter username"
+                                    placeholder="Enter username or email"
                                     required
                                     className="w-full h-12 pl-10 pr-4 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0284c7] transition-all"
                                 />

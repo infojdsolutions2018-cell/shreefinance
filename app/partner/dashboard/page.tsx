@@ -897,20 +897,19 @@ export default function PartnerDashboardPage() {
                                         <tfoot className="border-t-2 border-slate-300 bg-sky-50/70 font-black text-xs">
                                             <tr>
                                                 <td colSpan={6} className="py-4 px-5 text-slate-900 font-extrabold text-right uppercase tracking-wider text-[11px]">
-                                                    Total Summary:
+                                                    TOTAL SUMMARY:
                                                 </td>
                                                 <td className="py-4 px-5 bg-sky-100/90 align-top">
-                                                    <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">Total Disbursed</span>
+                                                    <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">TOTAL DISBURSED / APPLIED</span>
                                                     <span className="font-black text-sm text-[#0284c7] block">
                                                         ₹{filteredFiles.reduce((sum, f) => {
-                                                            const isDisb = f.leadStatus === "DISBURSED";
-                                                            const amt = isDisb || f.disbursedAmount ? (Number(f.disbursedAmount) || Number(f.applicationAmount) || 0) : 0;
+                                                            const amt = Number(f.disbursedAmount) || Number(f.applicationAmount) || 0;
                                                             return sum + amt;
-                                                        }, 0).toLocaleString("en-IN")}
+                                                        }, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-5 bg-sky-100/90 align-top">
-                                                    <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">Total Commission</span>
+                                                    <span className="text-[10px] text-slate-500 font-bold uppercase block mb-0.5">TOTAL COMMISSION</span>
                                                     <span className="font-black text-sm text-[#0284c7] block">
                                                         ₹{filteredFiles.reduce((sum, f) => sum + (Number(f.commissionAmount) || (Number(f.disbursedAmount || f.applicationAmount) * ((Number(f.commissionRate) || 2.0) / 100))), 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                     </span>

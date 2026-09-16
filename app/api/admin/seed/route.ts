@@ -1,27 +1,36 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Admin from "@/models/Admin";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function POST() {
     try {
-        await connectDB();
-
-        const username = process.env.ADMIN_USERNAME || "admin";
-        const password = process.env.ADMIN_PASSWORD || "admin123";
+        const username = "shreefinance@gmail.com";
+        const password = "shree123";
 
         // Check if admin already exists
-        const existing = await Admin.findOne({ username });
-        if (existing) {
-            return NextResponse.json({ message: "Admin already exists" }, { status: 200 });
-        }
+        const existing = await prisma.admin.findUnique({
+            where: { username }
+        });
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        await Admin.create({ username, passwordHash });
+        if (existing) {
+            await prisma.admin.update({
+                where: { username },
+                data: { passwordHash }
+            });
+            return NextResponse.json({ message: "Admin password updated successfully" }, { status: 200 });
+        }
 
-        return NextResponse.json({ message: "Admin user created successfully" }, { status: 201 });
+        await prisma.admin.create({
+            data: {
+                username,
+                passwordHash
+            }
+        });
+
+        return NextResponse.json({ message: "Admin user created successfully in PostgreSQL" }, { status: 201 });
     } catch (error) {
         console.error("Seed error:", error);
         return NextResponse.json({ error: "Failed to seed admin" }, { status: 500 });

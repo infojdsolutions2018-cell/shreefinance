@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Banner from "@/models/Banner";
+import { prisma } from "@/lib/prisma";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
 import { getAdminFromToken } from "@/lib/auth";
 
@@ -15,19 +14,22 @@ export async function DELETE(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await connectDB();
         const { id } = await params;
 
-        const banner = await Banner.findById(id);
+        const banner = await prisma.banner.findUnique({ where: { id } });
         if (!banner) {
             return NextResponse.json({ error: "Banner not found" }, { status: 404 });
         }
 
         // Delete from Cloudinary
-        await deleteFromCloudinary(banner.publicId);
+        try {
+            await deleteFromCloudinary(banner.publicId);
+        } catch (e) {
+            console.warn("Failed to delete banner from Cloudinary:", e);
+        }
 
-        // Delete from MongoDB
-        await Banner.findByIdAndDelete(id);
+        // Delete from PostgreSQL
+        await prisma.banner.delete({ where: { id } });
 
         return NextResponse.json({ message: "Banner deleted successfully" });
     } catch (error) {

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Blog from "@/models/Blog";
+import { prisma } from "@/lib/prisma";
 import { getAdminFromToken } from "@/lib/auth";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
@@ -11,12 +10,10 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        await connectDB();
 
-        // Search by slug first, then fallback to _id
-        let blog = await Blog.findOne({ slug: id });
-        if (!blog && id.match(/^[0-9a-fA-F]{24}$/)) {
-            blog = await Blog.findById(id);
+        let blog = await prisma.blog.findUnique({ where: { slug: id } });
+        if (!blog) {
+            blog = await prisma.blog.findUnique({ where: { id } }).catch(() => null);
         }
 
         if (!blog) {
@@ -24,10 +21,12 @@ export async function GET(
         }
 
         // Increment view count
-        blog.views = (blog.views || 0) + 1;
-        await blog.save();
+        const updatedBlog = await prisma.blog.update({
+            where: { id: blog.id },
+            data: { views: { increment: 1 } }
+        });
 
-        return NextResponse.json({ success: true, blog });
+        return NextResponse.json({ success: true, blog: updatedBlog });
     } catch (error) {
         console.error("Error fetching single blog:", error);
         return NextResponse.json({ error: "Failed to fetch blog post" }, { status: 500 });
@@ -46,7 +45,6 @@ export async function PATCH(
         }
 
         const { id } = await params;
-        await connectDB();
 
         const formData = await req.formData();
         const title = formData.get("title") as string | null;
@@ -59,35 +57,39 @@ export async function PATCH(
         const tagsRaw = formData.get("tags") as string | null;
         const published = formData.get("published") !== null ? formData.get("published") === "true" : undefined;
         const imageFile = formData.get("image") as File | null;
-        const coverImageUrl = formData.get("coverImageUrl") as string | null;
+        let coverImageUrl = formData.get("coverImageUrl") as string | null;
 
-        const blog = await Blog.findById(id);
-        if (!blog) {
+        const existing = await prisma.blog.findUnique({ where: { id } });
+        if (!existing) {
             return NextResponse.json({ error: "Blog post not found" }, { status: 404 });
-        }
-
-        if (title) blog.title = title;
-        if (excerpt) blog.excerpt = excerpt;
-        if (content) blog.content = content;
-        if (category) blog.category = category;
-        if (author) blog.author = author;
-        if (authorRole) blog.authorRole = authorRole;
-        if (readTime) blog.readTime = readTime;
-        if (published !== undefined) blog.published = published;
-        if (coverImageUrl !== null) blog.coverImage = coverImageUrl;
-
-        if (tagsRaw !== null) {
-            blog.tags = tagsRaw.split(",").map(t => t.trim()).filter(Boolean);
         }
 
         if (imageFile && imageFile.size > 0) {
             const bytes = await imageFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
             const uploadResult = await uploadToCloudinary(buffer, imageFile.name);
-            blog.coverImage = uploadResult.url;
+            coverImageUrl = uploadResult.url;
         }
 
-        await blog.save();
+        const updateData: Record<string, unknown> = {};
+        if (title) updateData.title = title;
+        if (excerpt) updateData.excerpt = excerpt;
+        if (content) updateData.content = content;
+        if (category) updateData.category = category;
+        if (author) updateData.author = author;
+        if (authorRole) updateData.authorRole = authorRole;
+        if (readTime) updateData.readTime = readTime;
+        if (published !== undefined) updateData.published = published;
+        if (coverImageUrl !== null && coverImageUrl !== undefined) updateData.coverImage = coverImageUrl;
+
+        if (tagsRaw !== null && tagsRaw !== undefined) {
+            updateData.tags = tagsRaw.split(",").map(t => t.trim()).filter(Boolean);
+        }
+
+        const blog = await prisma.blog.update({
+            where: { id },
+            data: updateData
+        });
 
         return NextResponse.json({ success: true, message: "Blog updated successfully", blog });
     } catch (error) {
@@ -108,12 +110,8 @@ export async function DELETE(
         }
 
         const { id } = await params;
-        await connectDB();
 
-        const deleted = await Blog.findByIdAndDelete(id);
-        if (!deleted) {
-            return NextResponse.json({ error: "Blog post not found" }, { status: 404 });
-        }
+        await prisma.blog.delete({ where: { id } });
 
         return NextResponse.json({ success: true, message: "Blog deleted successfully" });
     } catch (error) {

@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model PartnerApplication {
+  id                  String        @id @default(uuid())
+  referenceNo         String        @unique
+  name                String
+  email               String
+  mobile              String
+  city                String
+  profession          String?       @default("Loan Agent / DSA")
+  companyName         String?       @default("Individual DSA")
+  location            String?
+  addressProofType    String?
+  fullAddress         String?
+  experienceYears     String?
+  bankAccountType     String?
+  uploadedDocuments   Json?
+  status              String        @default("PENDING") // PENDING, APPROVED, REJECTED
+  isActive            Boolean       @default(false)
+  passwordHash        String?
+  initialPasswordSent Boolean       @default(false)
+  loginOtp            String?
+  loginOtpExpires     DateTime?
+  partnerToken        String?
+  rejectionReason     String?
+  reviewedAt          DateTime?
+  reviewedBy          String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  leads               PartnerLead[]
+}
+
+model PartnerLead {
+  id                 String              @id @default(uuid())
+  referenceNo        String              @unique
+  partnerId          String
+  partner            PartnerApplication? @relation(fields: [partnerId], references: [id])
+  partnerReferenceNo String
+  partnerName        String
+  partnerEmail       String?
+  category           String              @default("loans") // loans, cards, insurance, investments
+  subProduct         String              @default("Home Loan")
+  customerName       String
+  customerMobile     String
+  customerEmail      String?
+  customerCity       String
+  bankName           String              @default("HDFC Bank")
+  rmName             String?             @default("Sarvesh Bhoite")
+  applicationAmount  Float
+  disbursedAmount    Float?
+  bankReferenceNo    String?
+  commissionRate     Float               @default(2.0)
+  commissionAmount   Float               @default(0)
+  leadStatus         String              @default("IN_PROCESS") // IN_PROCESS, DOCS_SUBMITTED, BANK_LOGIN, SANCTIONED, DISBURSED, REJECTED
+  payoutStatus       String              @default("PENDING") // PENDING, PROCESSED, PAID
+  leadNotes          String?
+  disbursedAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  publicId  String
+  title     String
+  link      String?  @default("")
+  page      String   @default("home")
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Blog {
+  id         String   @id @default(uuid())
+  title      String
+  slug       String   @unique
+  excerpt    String
+  content    String
+  category   String   @default("Loans")
+  coverImage String?  @default("")
+  author     String   @default("Shree Finance Advisory Desk")
+  authorRole String?  @default("Senior Financial Research Team")
+  readTime   String?  @default("4 min read")
+  tags       String[] @default([])
+  published  Boolean  @default(true)
+  views      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SystemSettings {
+  id                        String   @id @default(uuid())
+  loansCommissionRate       Float    @default(2.0)
+  cardsCommissionRate       Float    @default(3.0)
+  insuranceCommissionRate   Float    @default(5.0)
+  investmentsCommissionRate Float    @default(1.5)
+  productRates              Json?    @default("{}")
+  updatedBy                 String?  @default("admin")
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
