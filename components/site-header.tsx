@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MainNav } from "@/components/main-nav";
 import { Button } from "@/components/ui/button";
-import { Menu, Phone, Mail, Zap, ChevronDown, X, Search, Sparkles, ShieldCheck, ArrowRight, Building2 } from "lucide-react";
+import { Menu, Phone, Mail, Zap, ChevronDown, X, Search, Sparkles, ShieldCheck, ArrowRight, Building2, ArrowLeftRight, FileText } from "lucide-react";
 import { megaMenuData } from "@/config/navigation";
 import { useState } from "react";
 import { LeadFormModal } from "@/components/dialogs/lead-form-modal";
@@ -298,6 +298,28 @@ export function SiteHeader() {
                                          <span className="flex items-center gap-2">
                                              <Sparkles className="h-4 w-4 text-[#0284c7]" />
                                              Become a Partner (DSA Registration)
+                                         </span>
+                                         <ArrowRight className="h-4 w-4" />
+                                     </Link>
+                                     <Link
+                                         href="/compare"
+                                         onClick={() => setIsMobileMenuOpen(false)}
+                                         className="flex items-center justify-between p-4 rounded-2xl bg-sky-50 font-black text-[#0284c7] text-sm border border-sky-200"
+                                     >
+                                         <span className="flex items-center gap-2">
+                                             <ArrowLeftRight className="h-4 w-4" />
+                                             Compare Multi-Bank Rates
+                                         </span>
+                                         <ArrowRight className="h-4 w-4" />
+                                     </Link>
+                                     <Link
+                                         href="/blogs"
+                                         onClick={() => setIsMobileMenuOpen(false)}
+                                         className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 font-black text-slate-900 text-sm shadow-xs"
+                                     >
+                                         <span className="flex items-center gap-2">
+                                             <FileText className="h-4 w-4 text-[#0284c7]" />
+                                             Blogs & Financial Articles
                                          </span>
                                          <ArrowRight className="h-4 w-4" />
                                      </Link>
