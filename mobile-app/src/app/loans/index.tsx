@@ -267,7 +267,16 @@ export default function LoansIndexScreen() {
               <View style={styles.cardActionsRow}>
                 <TouchableOpacity
                   style={styles.detailsBtn}
-                  onPress={() => router.push(`/loans/${loan.slug}` as any)}
+                  onPress={() => {
+                    if (loan.slug === 'personal-loan') {
+                      router.push('/loans/personal-loan' as any);
+                    } else {
+                      router.push({
+                        pathname: '/loans/[id]',
+                        params: { id: loan.slug, slug: loan.slug },
+                      } as any);
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
                   <Text style={styles.detailsBtnText}>Inside Details</Text>

@@ -101,11 +101,12 @@ export default function TabLayout() {
           }}
         />
 
-        {/* Auxiliary Routes hidden from Tab Bar */}
+        {/* Auxiliary Routes hidden from Tab Bar (do not use href: null on web as it causes auto-redirect to home) */}
         <Tabs.Screen
           name="calculator"
           options={{
-            href: null,
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
             headerShown: false,
           }}
         />
@@ -113,7 +114,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="compare"
           options={{
-            href: null,
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
             headerShown: false,
           }}
         />
@@ -121,7 +123,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="track"
           options={{
-            href: null,
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
             headerShown: false,
           }}
         />
@@ -129,7 +132,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="partner"
           options={{
-            href: null,
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
             headerShown: false,
           }}
         />
@@ -137,7 +141,17 @@ export default function TabLayout() {
         <Tabs.Screen
           name="loans/index"
           options={{
-            href: null,
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+            headerShown: false,
+          }}
+        />
+
+        <Tabs.Screen
+          name="loans/personal-loan"
+          options={{
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
             headerShown: false,
           }}
         />
@@ -145,7 +159,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="loans/[id]"
           options={{
-            href: null,
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
             headerShown: false,
           }}
         />

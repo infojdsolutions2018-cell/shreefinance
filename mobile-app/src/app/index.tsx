@@ -205,6 +205,17 @@ export default function HomeScreen() {
     },
   ];
 
+  const handleOpenLoanDetail = (slug: string) => {
+    if (slug === 'personal-loan') {
+      router.push('/loans/personal-loan' as any);
+    } else {
+      router.push({
+        pathname: '/loans/[id]',
+        params: { id: slug, slug },
+      } as any);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* ─── TOP APP HEADER (Matching shreefinances.com Header) ─── */}
@@ -367,7 +378,7 @@ export default function HomeScreen() {
                       if (slide.isPartnerRoute) {
                         router.push('/partner');
                       } else {
-                        openLoanModal(slide.type);
+                        router.push(`/loans/${slide.id}` as any);
                       }
                     }}
                     activeOpacity={0.85}
@@ -402,7 +413,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={prod.id}
                 style={styles.featuredProductCard}
-                onPress={() => router.push(`/loans/${prod.slug}` as any)}
+                onPress={() => handleOpenLoanDetail(prod.slug)}
                 activeOpacity={0.8}
               >
                 <View>

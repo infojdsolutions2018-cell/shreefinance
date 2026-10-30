@@ -16,6 +16,7 @@ import { BrandColors } from '@/constants/theme';
 import { getLoanBySlug, ALL_LOANS_LIST, LoanDetail } from '@/constants/loansData';
 import { LoanModal } from '@/components/LoanModal';
 import { Deal4LoansDynamicForm, DynamicLoanCategory } from '@/components/forms/Deal4LoansDynamicForm';
+import { PersonalLoanDualSection } from '@/components/loans/PersonalLoanDualSection';
 
 interface LoanDetailScreenProps {
   slugOverride?: string;
@@ -232,7 +233,14 @@ export default function LoanDetailScreen({ slugOverride }: LoanDetailScreenProps
                 ]}
                 onPress={() => {
                   if (!isActive) {
-                    router.push(`/loans/${item.slug}` as any);
+                    if (item.slug === 'personal-loan') {
+                      router.push('/loans/personal-loan' as any);
+                    } else {
+                      router.push({
+                        pathname: '/loans/[id]',
+                        params: { id: item.slug, slug: item.slug },
+                      } as any);
+                    }
                   }
                 }}
                 activeOpacity={0.8}
@@ -392,91 +400,95 @@ export default function LoanDetailScreen({ slugOverride }: LoanDetailScreenProps
           <Deal4LoansDynamicForm
             initialCategory={categoryKey}
             prefilledBank={selectedBank}
-            showCategorySwitcher={false}
+            showCategorySwitcher={true}
           />
         </View>
 
-        {/* ─── 4. INTERACTIVE EMI CALCULATOR ─── */}
-        <View style={styles.cardSection}>
-          <View style={styles.sectionHeadingRow}>
-            <View style={[styles.headingIconBg, { backgroundColor: '#ecfdf5' }]}>
-              <Ionicons name="calculator" size={18} color="#10b981" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sectionHeadingTitle}>{loan.title} EMI Calculator</Text>
-              <Text style={styles.sectionHeadingSub}>Starting rate: {loan.startingRate}</Text>
-            </View>
-          </View>
-
-          {/* EMI Result Display */}
-          <View style={styles.emiResultBox}>
-            <Text style={styles.emiResultLabel}>Estimated Monthly EMI</Text>
-            <Text style={styles.emiResultAmount}>₹{calculatedEmi.toLocaleString('en-IN')}</Text>
-            <View style={styles.emiSummaryRow}>
-              <View style={styles.emiSummaryCol}>
-                <Text style={styles.emiSummaryLbl}>Principal</Text>
-                <Text style={styles.emiSummaryVal}>₹{calcAmount.toLocaleString('en-IN')}</Text>
+        {/* ─── 4. INTERACTIVE EMI CALCULATOR & APPLICATION CARDS (MATCHING IMAGE 2) ─── */}
+        {loan.slug === 'personal-loan' ? (
+          <PersonalLoanDualSection onApplyPlan={() => handleApply()} />
+        ) : (
+          <View style={styles.cardSection}>
+            <View style={styles.sectionHeadingRow}>
+              <View style={[styles.headingIconBg, { backgroundColor: '#ecfdf5' }]}>
+                <Ionicons name="calculator" size={18} color="#10b981" />
               </View>
-              <View style={styles.emiSummaryDivider} />
-              <View style={styles.emiSummaryCol}>
-                <Text style={styles.emiSummaryLbl}>Total Interest</Text>
-                <Text style={[styles.emiSummaryVal, { color: loan.color }]}>₹{totalInterest.toLocaleString('en-IN')}</Text>
-              </View>
-              <View style={styles.emiSummaryDivider} />
-              <View style={styles.emiSummaryCol}>
-                <Text style={styles.emiSummaryLbl}>Total Payable</Text>
-                <Text style={styles.emiSummaryVal}>₹{totalPayment.toLocaleString('en-IN')}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionHeadingTitle}>{loan.title} EMI Calculator</Text>
+                <Text style={styles.sectionHeadingSub}>Starting rate: {loan.startingRate}</Text>
               </View>
             </View>
-          </View>
 
-          {/* Stepper Controls */}
-          <View style={styles.calcControlRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.calcLabel}>Loan Amount</Text>
-              <Text style={styles.calcCurrentVal}>₹{calcAmount.toLocaleString('en-IN')}</Text>
+            {/* EMI Result Display */}
+            <View style={styles.emiResultBox}>
+              <Text style={styles.emiResultLabel}>Estimated Monthly EMI</Text>
+              <Text style={styles.emiResultAmount}>₹{calculatedEmi.toLocaleString('en-IN')}</Text>
+              <View style={styles.emiSummaryRow}>
+                <View style={styles.emiSummaryCol}>
+                  <Text style={styles.emiSummaryLbl}>Principal</Text>
+                  <Text style={styles.emiSummaryVal}>₹{calcAmount.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={styles.emiSummaryDivider} />
+                <View style={styles.emiSummaryCol}>
+                  <Text style={styles.emiSummaryLbl}>Total Interest</Text>
+                  <Text style={[styles.emiSummaryVal, { color: loan.color }]}>₹{totalInterest.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={styles.emiSummaryDivider} />
+                <View style={styles.emiSummaryCol}>
+                  <Text style={styles.emiSummaryLbl}>Total Payable</Text>
+                  <Text style={styles.emiSummaryVal}>₹{totalPayment.toLocaleString('en-IN')}</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.stepperGroup}>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setCalcAmount((prev) => Math.max(100000, prev - (loan.maxAmountValue > 5000000 ? 500000 : 100000)))}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="remove" size={18} color="#0f172a" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setCalcAmount((prev) => Math.min(loan.maxAmountValue, prev + (loan.maxAmountValue > 5000000 ? 500000 : 100000)))}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={18} color="#0f172a" />
-              </TouchableOpacity>
-            </View>
-          </View>
 
-          <View style={styles.calcControlRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.calcLabel}>Tenure</Text>
-              <Text style={styles.calcCurrentVal}>{calcTenureYears} Years</Text>
+            {/* Stepper Controls */}
+            <View style={styles.calcControlRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.calcLabel}>Loan Amount</Text>
+                <Text style={styles.calcCurrentVal}>₹{calcAmount.toLocaleString('en-IN')}</Text>
+              </View>
+              <View style={styles.stepperGroup}>
+                <TouchableOpacity
+                  style={styles.stepperBtn}
+                  onPress={() => setCalcAmount((prev) => Math.max(100000, prev - (loan.maxAmountValue > 5000000 ? 500000 : 100000)))}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="remove" size={18} color="#0f172a" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.stepperBtn}
+                  onPress={() => setCalcAmount((prev) => Math.min(loan.maxAmountValue, prev + (loan.maxAmountValue > 5000000 ? 500000 : 100000)))}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={18} color="#0f172a" />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.stepperGroup}>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setCalcTenureYears((prev) => Math.max(1, prev - 1))}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="remove" size={18} color="#0f172a" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.stepperBtn}
-                onPress={() => setCalcTenureYears((prev) => Math.min(loan.maxTenureYears, prev + 1))}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={18} color="#0f172a" />
-              </TouchableOpacity>
+
+            <View style={styles.calcControlRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.calcLabel}>Tenure</Text>
+                <Text style={styles.calcCurrentVal}>{calcTenureYears} Years</Text>
+              </View>
+              <View style={styles.stepperGroup}>
+                <TouchableOpacity
+                  style={styles.stepperBtn}
+                  onPress={() => setCalcTenureYears((prev) => Math.max(1, prev - 1))}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="remove" size={18} color="#0f172a" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.stepperBtn}
+                  onPress={() => setCalcTenureYears((prev) => Math.min(loan.maxTenureYears, prev + 1))}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={18} color="#0f172a" />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* ─── 5. SPECIAL TOOL: HOME LOAN BALANCE TRANSFER (HLBT) CALCULATOR (Home Loan only) ─── */}
         {loan.specialCalculators?.hasBalanceTransfer && (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandColors } from '@/constants/theme';
 import { HamburgerMenu } from '@/components/HamburgerMenu';
@@ -40,14 +40,6 @@ export function AppHeader({
             >
               <Ionicons name="menu" size={22} color="#0f172a" />
             </TouchableOpacity>
-
-            <View style={styles.logoContainer}>
-              <Image
-                source={require('../../assets/images/shreelogobg.png')}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </View>
           </View>
 
           {/* Right Action Buttons */}
@@ -150,15 +142,6 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logoContainer: {
-    height: 34,
-    width: 110,
-    justifyContent: 'center',
-  },
-  logoImage: {
-    height: '100%',
-    width: '100%',
   },
   actions: {
     flexDirection: 'row',

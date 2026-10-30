@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { BrandColors } from '@/constants/theme';
 import { submitLoanApplication } from '@/services/api';
 
@@ -218,6 +219,7 @@ export function Deal4LoansDynamicForm({
   prefilledBank,
   onSuccess,
 }: Deal4LoansDynamicFormProps) {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<DynamicLoanCategory>(initialCategory);
   const activeConfig = DYNAMIC_LOAN_CATEGORIES[selectedCategory] || DYNAMIC_LOAN_CATEGORIES.personal;
 
@@ -420,12 +422,12 @@ export function Deal4LoansDynamicForm({
             contentContainerStyle={styles.webCategoryScroll}
           >
             {[
-              { id: 'personal', name: 'Personal', icon: 'link-outline' },
-              { id: 'home', name: 'Home', icon: 'home-outline' },
-              { id: 'car', name: 'Car', icon: 'car-sport-outline' },
-              { id: 'business', name: 'Business', icon: 'briefcase-outline' },
-              { id: 'lap', name: 'Loan Against Property', icon: 'business-outline' },
-              { id: 'education', name: 'Education', icon: 'school-outline' },
+              { id: 'personal', name: 'Personal', icon: 'link-outline' as const, slug: 'personal-loan' },
+              { id: 'home', name: 'Home', icon: 'home-outline' as const, slug: 'home-loan' },
+              { id: 'car', name: 'Car', icon: 'car-sport-outline' as const, slug: 'car-loan' },
+              { id: 'business', name: 'Business', icon: 'briefcase-outline' as const, slug: 'business-loan' },
+              { id: 'lap', name: 'Loan Against Property', icon: 'business-outline' as const, slug: 'loan-against-property' },
+              { id: 'education', name: 'Education', icon: 'school-outline' as const, slug: 'education-loan' },
             ].map((tab) => {
               const isSelected = selectedCategory === tab.id;
               return (
@@ -435,13 +437,23 @@ export function Deal4LoansDynamicForm({
                     styles.webTabBtn,
                     isSelected && styles.webTabBtnActive,
                   ]}
-                  onPress={() => setSelectedCategory(tab.id as DynamicLoanCategory)}
+                  onPress={() => {
+                    setSelectedCategory(tab.id as DynamicLoanCategory);
+                    if (tab.slug === 'personal-loan') {
+                      router.push('/loans/personal-loan' as never);
+                    } else {
+                      router.push({
+                        pathname: '/loans/[id]',
+                        params: { id: tab.slug, slug: tab.slug },
+                      } as never);
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
                   <Ionicons
-                    name={tab.icon as any}
-                    size={18}
-                    color={isSelected ? '#ffffff' : '#64748b'}
+                    name={tab.icon}
+                    size={20}
+                    color={isSelected ? '#ffffff' : '#334155'}
                   />
                   <Text
                     style={[
@@ -994,11 +1006,11 @@ export function Deal4LoansDynamicForm({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f0f7fe',
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#e0f2fe',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -1074,18 +1086,15 @@ const styles = StyleSheet.create({
   webTabBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: '#f1f5f9',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    minWidth: 90,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+    minWidth: 80,
     gap: 4,
   },
   webTabBtnActive: {
     backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
     elevation: 2,
     shadowColor: '#0284c7',
     shadowOffset: { width: 0, height: 2 },
@@ -1095,7 +1104,7 @@ const styles = StyleSheet.create({
   webTabBtnText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#475569',
+    color: '#334155',
     textAlign: 'center',
   },
   webTabBtnTextActive: {
